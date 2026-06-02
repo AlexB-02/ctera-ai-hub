@@ -1,0 +1,60 @@
+export const seedInsights = {
+  recommendations: [
+    {
+      title: "Enable Database Replication",
+      priority: "High",
+      category: "Security",
+      description: "Adding database replication provides critical resilience.",
+      benefits: ["High availability with automatic failover", "Disaster recovery protection", "Zero data loss guarantee"],
+      image: "/images/global-network.jpg",
+    },
+    {
+      title: "Upgrade Outdated Edge Filers",
+      priority: "High",
+      category: "Security",
+      description: "23 Edge Filer devices are running v7.0.1 (outdated). Upgrading to v7.0.3 will provide:",
+      benefits: [
+        "Improved security with latest patches",
+        "15% performance enhancement",
+        "New ransomware protection features",
+      ],
+      image: "/images/network-upgrade.jpg",
+    },
+    {
+      title: "Expand Storage Capacity",
+      priority: "High",
+      category: "Performance",
+      description: "Your storage is at 85% capacity. Expanding now will prevent service disruptions:",
+      benefits: ["Avoid automatic quota enforcement", "Support business growth", "Improve backup retention"],
+      image: "/images/dashboard-analytics.jpg",
+    },
+    {
+      title: "Renew License Early",
+      priority: "Medium",
+      category: "Licensing",
+      description: "Your license expires in 45 days. Renewing early ensures:",
+      benefits: ["Uninterrupted service access", "Lock in current pricing", "Qualify for early renewal discount"],
+      image: "/images/mcp-workflow.jpg",
+    },
+    {
+      title: "Enable Preview Server",
+      priority: "Low",
+      category: "Testing",
+      description: "Deploy a preview server to safely test changes before production:",
+      benefits: ["Zero-downtime deployments", "Test configurations safely", "Reduce production incidents by 80%"],
+      image: "/images/network-upgrade.jpg",
+    },
+    {
+      title: "Add CTERA Storage Class",
+      priority: "Low",
+      category: "Optimization",
+      description: "Add CTERA Storage Class for geo-distributed, more efficient storage management:",
+      benefits: [
+        "Optimize data placement across regions",
+        "Reduce latency for global users",
+        "Lower storage and bandwidth costs",
+      ],
+      image: "/images/dashboard-analytics.jpg",
+    },
+  ],
+}
