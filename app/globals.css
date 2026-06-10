@@ -1,85 +1,126 @@
+/* ============================================================
+   CTERA AI Hub — Rebranded theme (drop-in for app/globals.css)
+   --------------------------------------------------------------
+   Maps the CTERA Design System onto the app's existing shadcn
+   token names, so this is a true drop-in: paste over
+   app/globals.css and the whole app re-skins to CTERA brand.
+
+   Brand source of truth: CTERA Design System (colors_and_type.css)
+   - Purple  #505BE5  primary / accent
+   - Navy    #102341  sidebar, dark surfaces
+   - Charcoal#363435  body text
+   - Teal/Blue/Orange accents (AA-compliant darks for white text)
+   Fonts: Montserrat (headings) + Karla (body/UI). Google Fonts.
+
+   Light + Dark modes. Dark is system-aware via the app's
+   `.dark` class (toggle or prefers-color-scheme). All text/UI
+   pairs meet WCAG AA contrast.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&family=Karla:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.99 0.002 95);
-  --foreground: oklch(0.205 0.01 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.205 0.01 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.205 0.01 250);
-  --primary: oklch(0.48 0.14 252);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.965 0.003 250);
-  --secondary-foreground: oklch(0.25 0.01 250);
-  --muted: oklch(0.965 0.003 250);
-  --muted-foreground: oklch(0.52 0.01 250);
-  --accent: oklch(0.95 0.005 252);
-  --accent-foreground: oklch(0.25 0.01 250);
-  --destructive: oklch(0.58 0.18 27);
-  --destructive-foreground: oklch(1 0 0);
-  --success: oklch(0.6 0.12 160);
-  --warning: oklch(0.72 0.14 75);
-  --critical: oklch(0.6 0.18 27);
-  --border: oklch(0.925 0.003 250);
-  --input: oklch(0.92 0.003 250);
-  --ring: oklch(0.48 0.14 252);
-  --chart-1: oklch(0.48 0.14 252);
-  --chart-2: oklch(0.6 0.12 160);
-  --chart-3: oklch(0.72 0.14 75);
-  --chart-4: oklch(0.55 0.18 305);
-  --chart-5: oklch(0.6 0.18 27);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.18 0.005 250);
-  --sidebar-foreground: oklch(0.78 0.005 250);
-  --sidebar-primary: oklch(0.48 0.14 252);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.24 0.006 250);
-  --sidebar-accent-foreground: oklch(0.97 0 0);
-  --sidebar-border: oklch(0.24 0.006 250);
-  --sidebar-ring: oklch(0.48 0.14 252);
+  /* ---- surfaces ---- */
+  --background: #ffffff;
+  --foreground: #363435;          /* CTERA Charcoal */
+  --card: #ffffff;
+  --card-foreground: #363435;
+  --popover: #ffffff;
+  --popover-foreground: #363435;
+
+  /* ---- brand ---- */
+  --primary: #505be5;             /* CTERA Purple */
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f8;
+  --secondary-foreground: #2a2c4a;
+  --muted: #f6f6f7;
+  --muted-foreground: #6e6f72;    /* gray-500, AA on white */
+  --accent: #eef0fe;              /* purple tint */
+  --accent-foreground: #2526a9;   /* deep purple */
+
+  /* ---- status ---- */
+  --destructive: #d92d20;
+  --destructive-foreground: #ffffff;
+  --success: #2a9d8f;             /* teal-dark, AA */
+  --warning: #cd7a0c;             /* amber, AA on white */
+  --critical: #d92d20;
+
+  /* ---- lines / focus ---- */
+  --border: #e3e4e8;
+  --input: #dfe0df;
+  --ring: #505be5;
+
+  /* ---- data viz (brand-coded) ---- */
+  --chart-1: #505be5;             /* purple */
+  --chart-2: #2a9d8f;             /* teal */
+  --chart-3: #54bff5;             /* blue */
+  --chart-4: #ef8a17;             /* orange */
+  --chart-5: #102341;             /* navy */
+
+  --radius: 0.625rem;             /* 10px — CTERA radius-md */
+
+  /* ---- sidebar: CTERA Navy ---- */
+  --sidebar: #102341;
+  --sidebar-foreground: #c4ccda;
+  --sidebar-primary: #505be5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1d3157;      /* hover / active row */
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1f3a63;
+  --sidebar-ring: #6b74e8;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --background: #0b1626;          /* deep navy-black */
+  --foreground: #eaeaea;
+  --card: #11203a;                /* navy surface */
+  --card-foreground: #eaeaea;
+  --popover: #11203a;
+  --popover-foreground: #eaeaea;
+
+  --primary: #6b74e8;             /* lifted purple for dark contrast */
+  --primary-foreground: #ffffff;
+  --secondary: #1a2942;
+  --secondary-foreground: #eaeaea;
+  --muted: #1a2942;
+  --muted-foreground: #9aa4b8;    /* AA on dark surfaces */
+  --accent: #1e2d49;
+  --accent-foreground: #c4ccda;
+
+  --destructive: #f0584b;
+  --destructive-foreground: #ffffff;
+  --success: #46bea5;
+  --warning: #f0a533;
+  --critical: #f0584b;
+
+  --border: #233350;
+  --input: #233350;
+  --ring: #6b74e8;
+
+  --chart-1: #6b74e8;
+  --chart-2: #46bea5;
+  --chart-3: #54bff5;
+  --chart-4: #ef8a17;
+  --chart-5: #8a93f0;
+
+  --sidebar: #0a1322;             /* near-black navy */
+  --sidebar-foreground: #c4ccda;
+  --sidebar-primary: #6b74e8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #18294a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1d3157;
+  --sidebar-ring: #6b74e8;
 }
 
 @theme inline {
-  --font-sans: "Geist", "Geist Fallback";
-  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --font-sans: "Karla", "Aptos", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Montserrat", "Aptos", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -110,7 +151,7 @@
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 6px);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -119,6 +160,15 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* CTERA brand gradients — use as bg utilities, e.g. bg-(image:--grad-primary) */
+  --grad-primary: linear-gradient(120deg, #505be5 0%, #2526a9 100%);
+  --grad-prospects: linear-gradient(120deg, #505be5 0%, #2526a9 100%);
+  --grad-customers: linear-gradient(120deg, #505be5 0%, #102341 100%);
+  --grad-partners: linear-gradient(120deg, #54bff5 0%, #2b94c6 100%);
+  --grad-internal: linear-gradient(120deg, #6e6f72 0%, #363435 100%);
+  --grad-teal: linear-gradient(120deg, #46bea5 0%, #2a9d8f 100%);
+  --grad-orange: linear-gradient(120deg, #ef8a17 0%, #cd4d0c 100%);
 }
 
 @layer base {
@@ -130,29 +180,29 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv11", "ss01";
-    font-variation-settings: "opsz" 32;
+    font-family: var(--font-sans);
   }
+  /* Headings in Montserrat — CTERA display face */
   h1, h2, h3, h4, h5, h6 {
-    letter-spacing: -0.015em;
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
   }
-  /* Refined scrollbars */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+  /* Visible, brand-colored focus ring for keyboard users (a11y) */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
+  /* Refined brand scrollbars */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: oklch(0.88 0.003 250);
+    background: color-mix(in srgb, var(--muted-foreground) 35%, transparent);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: content-box;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.78 0.003 250);
+    background: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
     background-clip: content-box;
-    border: 2px solid transparent;
   }
 }
