@@ -184,7 +184,7 @@ function TenantSwitcherInline() {
               <div className="text-[13px] font-medium text-foreground">Global view</div>
               <div className="text-[11px] text-muted-foreground">Cross-tenant administration</div>
             </div>
-            {scope.type === "global" && <Check className="h-3.5 w-3.5 text-foreground" />}
+            {scope.type === "global" && <Check className="h-3.5 w-3.5 text-primary" />}
           </button>
 
           <p className="mt-1 px-2 pb-1 pt-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -205,16 +205,30 @@ function TenantSwitcherInline() {
                     isActive && "bg-muted",
                   )}
                 >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-muted">
+                  <div className="relative flex h-7 w-7 items-center justify-center rounded-md bg-muted">
                     <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span
+                      aria-hidden
+                      className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-popover"
+                      style={{
+                        background:
+                          tenant.status === "active"
+                            ? "#2a9d8f"
+                            : tenant.status === "trial"
+                              ? "#cd7a0c"
+                              : "#d92d20",
+                      }}
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[13px] font-medium text-foreground">{tenant.name}</div>
                     <div className="truncate text-[11px] text-muted-foreground">{tenant.domain}</div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] tabular-nums text-muted-foreground">{tenant.featureAdoption}%</span>
-                    {isActive && <Check className="h-3.5 w-3.5 text-foreground" />}
+                    <span className="text-[11px] tabular-nums text-muted-foreground">
+                      {tenant.users} users · {tenant.featureAdoption}%
+                    </span>
+                    {isActive && <Check className="h-3.5 w-3.5 text-primary" />}
                   </div>
                 </button>
               )
@@ -238,11 +252,9 @@ export function Sidebar() {
   return (
     <div className="flex h-screen w-60 flex-col bg-sidebar text-sidebar-foreground">
       {/* Brand */}
-      <div className="flex h-14 items-center gap-2.5 px-4">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-sidebar text-[13px] font-semibold">
-          C
-        </div>
-        <span className="text-[15px] font-medium tracking-tight text-white">ctera</span>
+      <div className="flex h-14 items-center gap-2.5 px-5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/ctera-logo-white.svg" alt="CTERA" className="h-[18px] w-auto" />
         {isAdminMode && (
           <span className="ml-auto rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white/60">
             Admin
@@ -282,7 +294,10 @@ export function Sidebar() {
               type="button"
               className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-sidebar-accent/60 focus:outline-none"
             >
-              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-[10px] font-semibold text-white">
+              <div
+                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                style={{ background: "linear-gradient(135deg,#505be5,#2526a9)" }}
+              >
                 {currentUser.initials}
               </div>
               <div className="min-w-0 flex-1">
