@@ -47,7 +47,7 @@ export default function DashboardPage() {
 
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0)
   const [currentLatestNewsIndex, setCurrentLatestNewsIndex] = useState(0)
-  const [deviceKpiIndex, setDeviceKpiIndex] = useState(0)
+  const [myCteraIndex, setMyCteraIndex] = useState(0)
 
   // Devices sorted alphabetically for the Device Fleet KPI card
   const fleetDevices = [...(hub.devices?.devices ?? [])].sort((a, b) => a.name.localeCompare(b.name))
@@ -322,153 +322,123 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className={`grid gap-6 ${isFeaturesOnlyTenant ? "" : "lg:grid-cols-3"}`}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Installed Versions Overview</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {latestVersions.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No installed version data for this tenant.
-                      </p>
-                    ) : (
-                      <div className="space-y-4">
-                        {latestVersions.map((item) => {
-                          const VersionIcon = getDashboardVersionIcon(
-                            "icon" in item ? (item as { icon?: string }).icon : undefined,
-                          )
-                          return (
-                            <div key={item.name} className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                                  <VersionIcon className="h-5 w-5 text-muted-foreground" />
-                                </div>
-                                <div>
-                                  <div className="text-sm font-medium">{item.name}</div>
-                                  <div className="text-xs text-muted-foreground">v{item.version}</div>
-                                </div>
-                              </div>
-                              <StatusBadge status={item.status} />
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                    <Button variant="link" className="mt-4 h-auto p-0 text-sm">
-                      View all download
-                      <ArrowRight className="ml-1 h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Device Fleet KPI */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">Device Fleet</CardTitle>
-                      <span className="text-xs text-muted-foreground">{fleetDevices.length} devices</span>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {fleetDevices.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No device data for this tenant.</p>
-                    ) : (
-                      <>
-                        <div className="space-y-3">
-                          {[0, 1, 2].slice(0, Math.min(3, fleetDevices.length)).map((offset) => {
-                            const d = fleetDevices[(deviceKpiIndex + offset) % fleetDevices.length]
-                            const Icon = getDeviceIcon("icon" in d ? (d as { icon?: string }).icon : undefined)
+              {(() => {
+                const cards = [
+                  <Card key="versions" className="h-full">
+                    <CardHeader>
+                      <CardTitle className="font-display text-base">Installed Versions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {latestVersions.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No installed version data for this tenant.</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {latestVersions.map((item, i) => {
+                            const VersionIcon = getDashboardVersionIcon(
+                              "icon" in item ? (item as { icon?: string }).icon : undefined,
+                            )
                             return (
-                              <div key={`${d.name}-${offset}`} className="flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                  <Icon className="h-4 w-4" />
+                              <div key={`${item.name}-${i}`} className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                    <VersionIcon className="h-5 w-5" />
+                                  </div>
+                                  <div>
+                                    <div className="text-sm font-medium">{item.name}</div>
+                                    <div className="text-xs text-muted-foreground">v{item.version}</div>
+                                  </div>
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="truncate text-sm font-medium">{d.name}</div>
-                                  <div className="truncate text-xs text-muted-foreground">{d.type}</div>
-                                </div>
-                                <StatusBadge status={d.status} />
+                                <StatusBadge status={item.status} />
                               </div>
                             )
                           })}
                         </div>
-                        {fleetDevices.length > 3 && (
-                          <div className="mt-3 flex items-center justify-center gap-3">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7 bg-transparent"
-                              aria-label="Previous devices"
-                              onClick={() => setDeviceKpiIndex((i) => (i - 1 + fleetDevices.length) % fleetDevices.length)}
-                            >
-                              <ChevronLeft className="h-3.5 w-3.5" />
-                            </Button>
-                            <span className="text-[11px] text-muted-foreground">
-                              top 3 of {fleetDevices.length}
-                            </span>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7 bg-transparent"
-                              aria-label="Next devices"
-                              onClick={() => setDeviceKpiIndex((i) => (i + 1) % fleetDevices.length)}
-                            >
-                              <ChevronRight className="h-3.5 w-3.5" />
-                            </Button>
+                      )}
+                      <Button variant="link" className="mt-4 h-auto p-0 text-sm">
+                        View all download
+                        <ArrowRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </CardContent>
+                  </Card>,
+                  <Card key="fleet" className="h-full">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="font-display text-base">Device Fleet</CardTitle>
+                        <span className="text-xs text-muted-foreground">{fleetDevices.length} devices</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {fleetDevices.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No device data for this tenant.</p>
+                      ) : (
+                        <>
+                          <div className="space-y-3">
+                            {fleetDevices.slice(0, 3).map((d, i) => {
+                              const Icon = getDeviceIcon("icon" in d ? (d as { icon?: string }).icon : undefined)
+                              return (
+                                <div key={`${d.name}-${i}`} className="flex items-center gap-3">
+                                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                    <Icon className="h-4 w-4" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="truncate text-sm font-medium">{d.name}</div>
+                                    <div className="truncate text-xs text-muted-foreground">{d.type}</div>
+                                  </div>
+                                  <StatusBadge status={d.status} />
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <Button asChild variant="link" className="mt-3 h-auto p-0 text-sm">
+                            <Link href="/portal">
+                              {fleetDevices.length > 3 ? `View all ${fleetDevices.length} in Deployment` : "View in Deployment"}
+                              <ArrowRight className="ml-1 h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>,
+                  <Card key="adoption" className="h-full">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="font-display text-base">Feature Adoption Rate</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-end justify-between">
+                        <div className="font-display text-4xl font-bold text-primary">{statAdoption}%</div>
+                        {tenantAdoption.prdData.length > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            {tenantAdoptionEnabled} of {tenantAdoption.prdData.length} enabled
                           </div>
                         )}
-                        <Button asChild variant="link" className="mt-3 h-auto p-0 text-sm">
-                          <Link href="/portal">
-                            View all in Deployment
-                            <ArrowRight className="ml-1 h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Feature Adoption rate */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Feature Adoption Rate</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-end justify-between">
-                      <div className="font-display text-4xl font-bold text-primary">{statAdoption}%</div>
-                      {tenantAdoption.prdData.length > 0 && (
-                        <div className="text-xs text-muted-foreground">
-                          {tenantAdoptionEnabled} of {tenantAdoption.prdData.length} enabled
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${statAdoption}%` }} />
-                    </div>
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      Capabilities enabled for {scope.type === "tenant" ? scope.tenant.name : "your fleet"}.
-                    </p>
-                    <Button asChild variant="link" className="mt-2 h-auto p-0 text-sm">
-                      <Link href="/feature-adoption">
-                        View Feature Adoption
-                        <ArrowRight className="ml-1 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {!isFeaturesOnlyTenant && (
-                  <>
+                      </div>
+                      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${statAdoption}%` }} />
+                      </div>
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        Capabilities enabled for {scope.type === "tenant" ? scope.tenant.name : "your fleet"}.
+                      </p>
+                      <Button asChild variant="link" className="mt-2 h-auto p-0 text-sm">
+                        <Link href="/feature-adoption">
+                          View Feature Adoption
+                          <ArrowRight className="ml-1 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>,
+                ]
+                if (!isFeaturesOnlyTenant) {
+                  cards.push(
                     <Card
-                      className="shadow-none"
+                      key="license"
+                      className="h-full shadow-none"
                       style={{
                         background: "color-mix(in srgb, var(--warning) 8%, transparent)",
                         borderColor: "color-mix(in srgb, var(--warning) 35%, transparent)",
                       }}
                     >
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base" style={{ color: "var(--warning)" }}>
+                        <CardTitle className="flex items-center gap-2 font-display text-base" style={{ color: "var(--warning)" }}>
                           <Clock className="h-5 w-5" />
                           License Information
                         </CardTitle>
@@ -478,10 +448,7 @@ export default function DashboardPage() {
                           <span className="text-sm font-medium text-foreground">Status</span>
                           <Badge
                             className="border-transparent"
-                            style={{
-                              background: "color-mix(in srgb, var(--warning) 15%, transparent)",
-                              color: "var(--warning)",
-                            }}
+                            style={{ background: "color-mix(in srgb, var(--warning) 15%, transparent)", color: "var(--warning)" }}
                           >
                             Active
                           </Badge>
@@ -500,17 +467,17 @@ export default function DashboardPage() {
                           Contact your account manager to renew your license and avoid service disruptions.
                         </p>
                       </CardContent>
-                    </Card>
-
+                    </Card>,
                     <Card
-                      className="shadow-none"
+                      key="storage"
+                      className="h-full shadow-none"
                       style={{
                         background: "color-mix(in srgb, var(--critical) 8%, transparent)",
                         borderColor: "color-mix(in srgb, var(--critical) 35%, transparent)",
                       }}
                     >
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base" style={{ color: "var(--critical)" }}>
+                        <CardTitle className="flex items-center gap-2 font-display text-base" style={{ color: "var(--critical)" }}>
                           <Database className="h-5 w-5" />
                           Storage Overview
                         </CardTitle>
@@ -525,26 +492,64 @@ export default function DashboardPage() {
                             className="h-3 w-full overflow-hidden rounded-full"
                             style={{ background: "color-mix(in srgb, var(--critical) 18%, transparent)" }}
                           >
-                            <div
-                              className="h-3 rounded-full"
-                              style={{ width: "92%", background: "var(--critical)" }}
-                            ></div>
+                            <div className="h-3 rounded-full" style={{ width: "92%", background: "var(--critical)" }}></div>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <AlertTriangle
-                            className="mt-0.5 h-4 w-4 flex-shrink-0"
-                            style={{ color: "var(--critical)" }}
-                          />
+                          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: "var(--critical)" }} />
                           <p className="text-xs text-muted-foreground">
                             Storage is near capacity. Expand now to prevent automatic quota enforcement.
                           </p>
                         </div>
                       </CardContent>
-                    </Card>
-                  </>
-                )}
-              </div>
+                    </Card>,
+                  )
+                }
+
+                const visible = 3
+                const count = cards.length
+                return (
+                  <div className="relative">
+                    <div className="grid items-stretch gap-6 lg:grid-cols-3">
+                      {Array.from({ length: Math.min(visible, count) }).map((_, o) => cards[(myCteraIndex + o) % count])}
+                    </div>
+                    {count > visible && (
+                      <div className="mt-4 flex items-center justify-center gap-4">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 bg-transparent"
+                          aria-label="Previous cards"
+                          onClick={() => setMyCteraIndex((i) => (i - 1 + count) % count)}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <div className="flex gap-2">
+                          {cards.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setMyCteraIndex(i)}
+                              aria-label={`Go to card ${i + 1}`}
+                              className={`h-2 w-2 rounded-full transition-colors ${
+                                i === myCteraIndex ? "bg-primary" : "bg-muted-foreground/30"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 bg-transparent"
+                          aria-label="Next cards"
+                          onClick={() => setMyCteraIndex((i) => (i + 1) % count)}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
             </CardContent>
           </Card>
 
