@@ -15,6 +15,8 @@ import {
   Clock,
   AlertTriangle,
   CheckSquare,
+  Sparkles,
+  Download,
 } from "lucide-react"
 import { useEffect, useState, useMemo } from "react"
 import Link from "next/link"
@@ -44,6 +46,13 @@ export default function DashboardPage() {
 
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0)
   const [currentLatestNewsIndex, setCurrentLatestNewsIndex] = useState(0)
+
+  const firstName = hub.currentUser.name.split(" ")[0]
+  const [greeting, setGreeting] = useState("Good day")
+  useEffect(() => {
+    const h = new Date().getHours()
+    setGreeting(h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening")
+  }, [])
   const [isPollOpen, setIsPollOpen] = useState(false)
   const [pollAnswers, setPollAnswers] = useState({
     satisfaction: "",
@@ -114,6 +123,46 @@ export default function DashboardPage() {
         />
 
         <div className="p-8">
+          {/* Branded welcome hero */}
+          <section
+            className="relative mb-6 overflow-hidden rounded-2xl px-8 py-8 text-white shadow-md"
+            style={{ background: "linear-gradient(120deg,#505be5 0%,#102341 100%)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/ctera-curve.svg"
+              alt=""
+              aria-hidden
+              className="pointer-events-none absolute right-6 top-5 w-36 opacity-15"
+            />
+            <div className="relative">
+              <div className="text-[13px] font-medium text-white/75">Welcome back</div>
+              <h2 className="mt-2 mb-1.5 text-[27px] font-bold tracking-tight text-white">
+                {greeting}, {firstName}
+              </h2>
+              <p className="max-w-lg text-sm text-white/85">
+                Your all-in-one hub for CTERA updates, downloads and resources. Here&apos;s what needs your attention
+                today.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2.5">
+                <Button asChild className="bg-white text-[#102341] hover:bg-white/90">
+                  <Link href="/insights">
+                    <Sparkles className="mr-1.5 h-4 w-4" /> View AI recommendations
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="secondary"
+                  className="border border-white/20 bg-white/15 text-white hover:bg-white/25"
+                >
+                  <Link href="/downloads">
+                    <Download className="mr-1.5 h-4 w-4" /> Downloads
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </section>
+
           {showPortalFeatureSummary && scope.type === "tenant" && (
             <Card className="mb-6 border-primary/25 bg-muted/40">
               <CardHeader className="pb-2">
@@ -256,21 +305,37 @@ export default function DashboardPage() {
 
                 {!isFeaturesOnlyTenant && (
                   <>
-                    <Card className="border-orange-200 bg-orange-50/50">
+                    <Card
+                      className="shadow-none"
+                      style={{
+                        background: "color-mix(in srgb, var(--warning) 8%, transparent)",
+                        borderColor: "color-mix(in srgb, var(--warning) 35%, transparent)",
+                      }}
+                    >
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base text-orange-900">
-                          <Clock className="h-5 w-5 text-orange-600" />
+                        <CardTitle className="flex items-center gap-2 text-base" style={{ color: "var(--warning)" }}>
+                          <Clock className="h-5 w-5" />
                           License Information
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-foreground">Status</span>
-                          <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Active</Badge>
+                          <Badge
+                            className="border-transparent"
+                            style={{
+                              background: "color-mix(in srgb, var(--warning) 15%, transparent)",
+                              color: "var(--warning)",
+                            }}
+                          >
+                            Active
+                          </Badge>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-foreground">Expires In</span>
-                          <span className="text-sm font-bold text-orange-600">45 days</span>
+                          <span className="text-sm font-bold" style={{ color: "var(--warning)" }}>
+                            45 days
+                          </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-foreground">Expiration Date</span>
@@ -282,10 +347,16 @@ export default function DashboardPage() {
                       </CardContent>
                     </Card>
 
-                    <Card className="border-red-200 bg-red-50/50">
+                    <Card
+                      className="shadow-none"
+                      style={{
+                        background: "color-mix(in srgb, var(--critical) 8%, transparent)",
+                        borderColor: "color-mix(in srgb, var(--critical) 35%, transparent)",
+                      }}
+                    >
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base text-red-900">
-                          <Database className="h-5 w-5 text-red-600" />
+                        <CardTitle className="flex items-center gap-2 text-base" style={{ color: "var(--critical)" }}>
+                          <Database className="h-5 w-5" />
                           Storage Overview
                         </CardTitle>
                       </CardHeader>
@@ -295,12 +366,21 @@ export default function DashboardPage() {
                             <span className="text-sm font-medium text-foreground">Usage</span>
                             <span className="text-base font-bold text-foreground">92 TB / 100 TB</span>
                           </div>
-                          <div className="h-3 w-full rounded-full bg-red-100">
-                            <div className="h-3 rounded-full bg-red-500" style={{ width: "92%" }}></div>
+                          <div
+                            className="h-3 w-full overflow-hidden rounded-full"
+                            style={{ background: "color-mix(in srgb, var(--critical) 18%, transparent)" }}
+                          >
+                            <div
+                              className="h-3 rounded-full"
+                              style={{ width: "92%", background: "var(--critical)" }}
+                            ></div>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+                          <AlertTriangle
+                            className="mt-0.5 h-4 w-4 flex-shrink-0"
+                            style={{ color: "var(--critical)" }}
+                          />
                           <p className="text-xs text-muted-foreground">
                             Storage is near capacity. Expand now to prevent automatic quota enforcement.
                           </p>
@@ -403,7 +483,7 @@ export default function DashboardPage() {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-purple-600" />
+              <CheckSquare className="h-5 w-5 text-primary" />
               Your Opinion Matters
             </DialogTitle>
             <DialogDescription>
@@ -547,7 +627,7 @@ export default function DashboardPage() {
             <Button variant="outline" onClick={() => setIsPollOpen(false)} className="flex-1">
               Skip
             </Button>
-            <Button onClick={handlePollSubmit} className="flex-1 bg-purple-600 hover:bg-purple-700">
+            <Button onClick={handlePollSubmit} className="flex-1">
               Submit Feedback
             </Button>
           </div>
