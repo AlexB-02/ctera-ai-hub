@@ -287,22 +287,22 @@ export function Sidebar() {
       )}
 
       {/* User profile footer */}
-      <div className="border-t border-sidebar-border p-3">
+      <div className="border-t border-sidebar-border px-3.5 py-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-sidebar-accent/60 focus:outline-none"
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-white/[0.07] focus:outline-none"
             >
               <div
-                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                style={{ background: "linear-gradient(135deg,#505be5,#2526a9)" }}
+                className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-full font-display text-[11px] font-bold text-white"
+                style={{ background: "linear-gradient(120deg,#46bea5,#2a9d8f)" }}
               >
                 {currentUser.initials}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[12px] font-medium text-white">{currentUser.name}</div>
-                <div className="truncate text-[10px] text-sidebar-foreground/50">{currentUser.role}</div>
+                <div className="truncate text-[12.5px] font-bold text-white">{currentUser.name}</div>
+                <div className="truncate text-[10.5px] text-sidebar-foreground/60">{currentUser.role}</div>
               </div>
             </button>
           </DropdownMenuTrigger>
