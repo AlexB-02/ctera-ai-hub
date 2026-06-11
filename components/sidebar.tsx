@@ -250,7 +250,7 @@ export function Sidebar() {
   const isAdminMode = pathname.startsWith("/admin")
 
   return (
-    <div className="flex h-screen w-60 flex-col bg-sidebar text-sidebar-foreground">
+    <div className="sticky top-0 flex h-screen w-60 flex-shrink-0 flex-col self-start bg-sidebar text-sidebar-foreground">
       {/* Brand */}
       <div className="flex h-14 items-center gap-2.5 px-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
