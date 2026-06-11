@@ -1,35 +1,28 @@
 "use client"
 
 import { Sidebar } from "@/components/sidebar"
+import { TopBar } from "@/components/top-bar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Lightbulb, TrendingUp, AlertCircle, Clock, Check, X } from "lucide-react"
+import { Check, X } from "lucide-react"
 import { useHub } from "@/components/hub-provider"
+import { getDashboardNewsIcon } from "@/lib/lucide-icon-map"
 
-const getPriorityColor = (priority: string) => {
+const REC_GRADIENTS = [
+  "var(--grad-primary)",
+  "var(--grad-teal)",
+  "var(--grad-partners)",
+  "var(--grad-customers)",
+]
+
+function priorityColor(priority: string) {
   switch (priority) {
     case "High":
-      return "bg-red-50 border-red-200"
+      return "var(--critical)"
     case "Medium":
-      return "bg-yellow-50 border-yellow-200"
-    case "Low":
-      return "bg-green-50 border-green-200"
+      return "var(--warning)"
     default:
-      return "bg-gray-50"
-  }
-}
-
-const getPriorityBadge = (priority: string) => {
-  switch (priority) {
-    case "High":
-      return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Priority: High</Badge>
-    case "Medium":
-      return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Priority: Medium</Badge>
-    case "Low":
-      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Priority: Low</Badge>
-    default:
-      return <Badge variant="secondary">Priority: {priority}</Badge>
+      return "var(--success)"
   }
 }
 
@@ -38,59 +31,63 @@ export default function HubAIInsights() {
   const { recommendations } = hub.insights
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-                <Lightbulb className="h-8 w-8 text-primary" />
-                AI Recommendations Hub
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                AI-Powered Recommendations - Personalized insights based on your infrastructure and usage patterns
-              </p>
-            </div>
-          </div>
 
+      <main className="flex-1 overflow-y-auto">
+        <TopBar
+          title="AI Recommendations Hub"
+          subtitle="Personalized insights based on your infrastructure and usage patterns"
+        />
+
+        <div className="p-8">
           <div className="grid gap-6 md:grid-cols-2">
-            {recommendations.map((rec, index) => (
-              <Card key={index} className={getPriorityColor(rec.priority)}>
-                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-muted to-muted/50">
-                  <img src={rec.image || "/placeholder.svg"} alt={rec.title} className="h-full w-full object-cover" />
-                </div>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      {rec.priority === "High" && <AlertCircle className="h-5 w-5 text-red-600" />}
-                      {rec.priority === "Medium" && <Clock className="h-5 w-5 text-yellow-600" />}
-                      {rec.priority === "Low" && <TrendingUp className="h-5 w-5 text-green-600" />}
-                      <span className="text-xs font-medium text-muted-foreground">{rec.category}</span>
+            {recommendations.map((rec, index) => {
+              const pc = priorityColor(rec.priority)
+              const RecIcon = getDashboardNewsIcon(
+                "icon" in rec ? (rec as { icon?: string }).icon : undefined,
+              )
+              return (
+                <Card key={index} className="flex flex-col overflow-hidden">
+                  <div
+                    className="relative flex h-28 items-center justify-center overflow-hidden text-white"
+                    style={{ background: REC_GRADIENTS[index % REC_GRADIENTS.length] }}
+                  >
+                    <RecIcon className="h-12 w-12 opacity-95" />
+                    <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-[#102341] shadow-sm">
+                      {rec.category}
+                    </span>
+                  </div>
+                  <CardHeader className="pb-2">
+                    <span
+                      className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                      style={{ background: `color-mix(in srgb, ${pc} 12%, transparent)`, color: pc }}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: pc }} />
+                      {rec.priority} priority
+                    </span>
+                    <CardTitle className="mt-2 text-lg font-bold">{rec.title}</CardTitle>
+                    <CardDescription className="text-[13px]">{rec.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-1 flex-col gap-4">
+                    <ul className="space-y-2">
+                      {rec.benefits.map((benefit, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-[13px]">
+                          <Check className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: "var(--success)" }} />
+                          <span>{benefit}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-auto flex gap-2">
+                      <Button className="flex-1">Take Action</Button>
+                      <Button variant="outline" size="icon" aria-label="Dismiss recommendation">
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                    {getPriorityBadge(rec.priority)}
-                  </div>
-                  <CardTitle className="text-xl mt-2">{rec.title}</CardTitle>
-                  <CardDescription className="text-sm">{rec.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-2">
-                    {rec.benefits.map((benefit, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm">
-                        <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                        <span>{benefit}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="flex gap-2">
-                    <Button className="flex-1">Take Action</Button>
-                    <Button variant="outline" size="icon">
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         </div>
       </main>
