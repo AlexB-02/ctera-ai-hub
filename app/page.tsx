@@ -64,6 +64,17 @@ export default function DashboardPage() {
       ? scope.tenant.featureAdoption
       : Math.round(hub.tenants.reduce((a, t) => a + t.featureAdoption, 0) / Math.max(hub.tenants.length, 1))
   const devicesUpToDate = fleetDevices.filter((d) => d.status === "up-to-date").length
+  const recGradients = [
+    "linear-gradient(135deg,#505be5,#2526a9)",
+    "linear-gradient(135deg,#54bff5,#2563eb)",
+    "linear-gradient(135deg,#46bea5,#2a9d8f)",
+  ]
+  const newsGradients = [
+    "var(--grad-primary)",
+    "var(--grad-teal)",
+    "var(--grad-partners)",
+    "var(--grad-customers)",
+  ]
   const [isPollOpen, setIsPollOpen] = useState(false)
   const [pollAnswers, setPollAnswers] = useState({
     satisfaction: "",
@@ -190,29 +201,42 @@ export default function DashboardPage() {
                       {[0, 1, 2].map((offset) => {
                         const index = (currentNewsIndex + offset) % newsItems.length
                         const article = newsItems[index]
+                        const RecIcon = getDashboardNewsIcon(
+                          "icon" in article ? (article as { icon?: string }).icon : undefined,
+                        )
                         return (
-                          <Card key={index} className="overflow-hidden">
-                            <div className="relative h-48 overflow-hidden bg-gradient-to-br from-muted to-muted/50">
-                              <img
-                                src={article.image || "/placeholder.svg"}
-                                alt={article.title}
-                                className="h-full w-full object-cover"
-                              />
+                          <Card key={index} className="flex flex-col overflow-hidden">
+                            <div
+                              className="relative flex h-28 items-center justify-center overflow-hidden text-white"
+                              style={{ background: recGradients[index % recGradients.length] }}
+                            >
+                              <RecIcon className="h-12 w-12 opacity-95" />
+                              <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-[#102341] shadow-sm">
+                                {article.category}
+                              </span>
                             </div>
-                            <CardHeader>
-                              <div className="text-xs font-medium text-primary">{article.category}</div>
-                              <CardTitle className="text-sm">{article.title}</CardTitle>
-                              <CardDescription className="line-clamp-2 text-xs">{article.description}</CardDescription>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-[15px] font-bold">{article.title}</CardTitle>
+                              <CardDescription className="line-clamp-2 text-[13px]">
+                                {article.description}
+                              </CardDescription>
                             </CardHeader>
-                            <CardContent>
-                              <Button variant="link" className="h-auto p-0 text-xs">
+                            <CardContent className="flex flex-1 flex-col">
+                              <Button variant="link" className="h-auto justify-start p-0 text-xs">
                                 Learn more →
                               </Button>
-                              <div className="mt-4 border-t pt-4">
-                                <p className="text-xs font-bold text-muted-foreground">
+                              <div
+                                className="mt-3 rounded-lg p-3"
+                                style={{
+                                  background: "color-mix(in srgb, var(--primary) 7%, transparent)",
+                                  border: "1px solid color-mix(in srgb, var(--primary) 18%, transparent)",
+                                }}
+                              >
+                                <p className="flex items-center gap-1.5 font-display text-[11px] font-bold text-primary">
+                                  <Sparkles className="h-3.5 w-3.5" />
                                   Why am I getting this recommendation?
                                 </p>
-                                <p className="mt-1 text-xs text-muted-foreground">{article.reason}</p>
+                                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{article.reason}</p>
                               </div>
                             </CardContent>
                           </Card>
@@ -221,23 +245,37 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-center gap-4">
-                    <Button variant="outline" size="icon" onClick={handlePrevNews} className="h-8 w-8 bg-transparent">
+                  <div className="mt-5 flex items-center justify-center gap-4">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handlePrevNews}
+                      className="h-9 w-9 rounded-full border-border shadow-sm"
+                      aria-label="Previous recommendations"
+                    >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-1.5">
                       {newsItems.map((_, index) => (
                         <button
                           key={index}
                           onClick={() => setCurrentNewsIndex(index)}
-                          className={`h-2 w-2 rounded-full transition-colors ${
-                            index === currentNewsIndex ? "bg-primary" : "bg-muted-foreground/30"
+                          className={`h-2 rounded-full transition-all ${
+                            index === currentNewsIndex
+                              ? "w-5 bg-primary"
+                              : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
                           }`}
                           aria-label={`Go to slide ${index + 1}`}
                         />
                       ))}
                     </div>
-                    <Button variant="outline" size="icon" onClick={handleNextNews} className="h-8 w-8 bg-transparent">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleNextNews}
+                      className="h-9 w-9 rounded-full border-border shadow-sm"
+                      aria-label="Next recommendations"
+                    >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
@@ -541,7 +579,11 @@ export default function DashboardPage() {
                         )
 
                         return (
-                          <Card key={index} className={`flex flex-col bg-gradient-to-br ${item.gradient} text-white`}>
+                          <Card
+                            key={index}
+                            className="flex flex-col border-0 text-white shadow-md"
+                            style={{ background: newsGradients[index % newsGradients.length] }}
+                          >
                             <CardHeader className="pb-4">
                               <div className="flex items-center gap-2">
                                 <Icon className="h-5 w-5" />
@@ -571,22 +613,25 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-center gap-4">
+                  <div className="mt-5 flex items-center justify-center gap-4">
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={handlePrevLatestNews}
-                      className="h-8 w-8 bg-transparent"
+                      className="h-9 w-9 rounded-full border-border shadow-sm"
+                      aria-label="Previous news"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-1.5">
                       {latestNewsForDisplay.map((_, index) => (
                         <button
                           key={index}
                           onClick={() => setCurrentLatestNewsIndex(index)}
-                          className={`h-2 w-2 rounded-full transition-colors ${
-                            index === currentLatestNewsIndex ? "bg-primary" : "bg-muted-foreground/30"
+                          className={`h-2 rounded-full transition-all ${
+                            index === currentLatestNewsIndex
+                              ? "w-5 bg-primary"
+                              : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
                           }`}
                           aria-label={`Go to slide ${index + 1}`}
                         />
@@ -596,7 +641,8 @@ export default function DashboardPage() {
                       variant="outline"
                       size="icon"
                       onClick={handleNextLatestNews}
-                      className="h-8 w-8 bg-transparent"
+                      className="h-9 w-9 rounded-full border-border shadow-sm"
+                      aria-label="Next news"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>

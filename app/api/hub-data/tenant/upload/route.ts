@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error:
-          "This JSON is a feature inventory (an array of features with portal_name), not a single tenant object. Use “Import from feature inventory JSON” below, or POST /api/hub-data/tenant/from-features.",
+          "This JSON is a feature inventory (an array of features with portal_name), not a single tenant object. Import via Admin → Tenants or POST /api/hub-data/tenant/from-features.",
       },
       { status: 400 },
     )

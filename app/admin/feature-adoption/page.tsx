@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/sidebar"
 import { TopBar } from "@/components/top-bar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useHub } from "@/components/hub-provider"
-import { Search } from "lucide-react"
+import { Search, Check, X, CheckSquare } from "lucide-react"
 
 // All features across all categories with per-tenant adoption simulation
 type Feature = {
@@ -75,10 +75,20 @@ const rawFeatures = {
 const categories = ["All", ...Object.keys(rawFeatures)]
 
 function adoptionColor(pct: number) {
-  if (pct >= 80) return { bar: "bg-emerald-500", text: "text-emerald-700", badge: "bg-emerald-50 border-emerald-200 text-emerald-700" }
-  if (pct >= 60) return { bar: "bg-blue-500", text: "text-blue-700", badge: "bg-blue-50 border-blue-200 text-blue-700" }
-  if (pct >= 40) return { bar: "bg-amber-500", text: "text-amber-700", badge: "bg-amber-50 border-amber-200 text-amber-700" }
-  return { bar: "bg-red-500", text: "text-red-700", badge: "bg-red-50 border-red-200 text-red-700" }
+  if (pct >= 80) return { bar: "bg-success", text: "text-success", color: "var(--success)" }
+  if (pct >= 60) return { bar: "bg-primary", text: "text-primary", color: "var(--primary)" }
+  if (pct >= 40) return { bar: "bg-warning", text: "text-warning", color: "var(--warning)" }
+  return { bar: "bg-critical", text: "text-critical", color: "var(--critical)" }
+}
+
+const categoryTints: Record<string, string> = {
+  Infrastructure: "var(--primary)",
+  Services: "#54bff5",
+  "Tenant Settings": "var(--warning)",
+  "Global Settings": "var(--success)",
+}
+function tintFor(category: string) {
+  return categoryTints[category] ?? "var(--muted-foreground)"
 }
 
 function cn(...classes: (string | undefined | false)[]) {
@@ -140,37 +150,60 @@ export default function AdminFeatureAdoptionPage() {
         <TopBar title="Feature Adoption" subtitle={`Global view across ${tenants.length} tenants`} />
 
         <div className="p-8 space-y-6">
+          {/* Branded hero */}
+          <section
+            className="relative overflow-hidden rounded-2xl px-8 py-7 text-white shadow-md"
+            style={{ background: "var(--grad-customers)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/ctera-curve.svg"
+              alt=""
+              aria-hidden
+              className="pointer-events-none absolute right-6 top-5 w-36 opacity-15"
+            />
+            <div className="relative">
+              <div className="flex items-center gap-1.5 text-[13px] font-medium text-white/75">
+                <CheckSquare className="h-3.5 w-3.5" /> Feature Adoption
+              </div>
+              <h2 className="mt-2 text-[27px] font-bold tracking-tight text-white">Global feature adoption</h2>
+              <p className="mt-1.5 max-w-xl text-sm text-white/85">
+                Per-feature adoption rates across all {tenants.length} tenants.
+              </p>
+            </div>
+          </section>
+
           {/* KPI row */}
           <div className="grid grid-cols-4 gap-4">
-            <Card className="col-span-1">
+            <Card className="col-span-1 border-primary/15 bg-gradient-to-br from-card to-primary/5">
               <CardContent className="p-5">
-                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Overall adoption</div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Overall adoption</div>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-4xl font-semibold tracking-tight tabular-nums">{overallAdoption}</span>
+                  <span className="font-display text-2xl font-bold tracking-tight tabular-nums text-primary">{overallAdoption}</span>
                   <span className="text-xl font-medium text-muted-foreground">%</span>
                 </div>
                 <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-foreground" style={{ width: `${overallAdoption}%` }} />
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${overallAdoption}%` }} />
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-5">
-                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Total features</div>
-                <div className="mt-2 text-4xl font-semibold tracking-tight tabular-nums">{features.length}</div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Total features</div>
+                <div className="mt-2 font-display text-2xl font-bold tracking-tight tabular-nums text-foreground">{features.length}</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-5">
-                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">High adoption</div>
-                <div className="mt-2 text-4xl font-semibold tracking-tight tabular-nums text-emerald-600">{highCount}</div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">High adoption</div>
+                <div className="mt-2 font-display text-2xl font-bold tracking-tight tabular-nums text-success">{highCount}</div>
                 <div className="text-[11px] text-muted-foreground mt-1">above 80%</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-5">
-                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Needs attention</div>
-                <div className="mt-2 text-4xl font-semibold tracking-tight tabular-nums text-amber-600">{lowCount}</div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Needs attention</div>
+                <div className="mt-2 font-display text-2xl font-bold tracking-tight tabular-nums text-warning">{lowCount}</div>
                 <div className="text-[11px] text-muted-foreground mt-1">below 60%</div>
               </CardContent>
             </Card>
@@ -186,7 +219,7 @@ export default function AdminFeatureAdoptionPage() {
                   className={cn(
                     "rounded px-3 py-1.5 text-[12px] font-medium transition-colors",
                     selectedCategory === cat
-                      ? "bg-foreground text-background"
+                      ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -213,7 +246,16 @@ export default function AdminFeatureAdoptionPage() {
               <Card key={category}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-[15px] font-semibold">{category}</CardTitle>
+                    <span
+                      className="inline-flex items-center rounded-md px-2.5 py-1 text-[13px] font-semibold"
+                      style={{
+                        background: `color-mix(in srgb, ${tintFor(category)} 12%, transparent)`,
+                        color: tintFor(category),
+                        border: `1px solid color-mix(in srgb, ${tintFor(category)} 30%, transparent)`,
+                      }}
+                    >
+                      {category}
+                    </span>
                     <div className="flex items-center gap-3">
                       <span className="text-[12px] text-muted-foreground">{items.length} features</span>
                       <div className="flex items-center gap-2">
@@ -266,11 +308,18 @@ export default function AdminFeatureAdoptionPage() {
                             </Td>
                             <Td className="text-right">
                               <span
-                                className={cn(
-                                  "inline-block rounded-full border px-2 py-0.5 text-[11px] font-semibold tabular-nums",
-                                  color.badge,
-                                )}
+                                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold tabular-nums"
+                                style={{
+                                  background: `color-mix(in srgb, ${color.color} 10%, transparent)`,
+                                  color: color.color,
+                                  borderColor: `color-mix(in srgb, ${color.color} 30%, transparent)`,
+                                }}
                               >
+                                {feature.adoption >= 60 ? (
+                                  <Check className="h-3 w-3" />
+                                ) : (
+                                  <X className="h-3 w-3" />
+                                )}
                                 {feature.adoption}%
                               </span>
                             </Td>

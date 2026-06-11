@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { Sidebar } from "@/components/sidebar"
+import { TopBar } from "@/components/top-bar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +23,7 @@ import { StatusBadge } from "@/components/status-badge"
 import Link from "next/link"
 import { useHub } from "@/components/hub-provider"
 import { useTenant } from "@/components/tenant-context"
+import { getDashboardVersionIcon } from "@/lib/lucide-icon-map"
 import { effectivePortal } from "@/lib/tenant-hub-views"
 import type { PortalDevice } from "@/components/deployment-locations-map"
 import dynamic from "next/dynamic"
@@ -311,16 +313,12 @@ export default function DeploymentOverview() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Deployment Overview</h1>
-              <p className="text-muted-foreground">
-                {scope.type === "tenant" ? scope.tenant.domain : "All tenants"}
-              </p>
-            </div>
+        <TopBar
+          title="Deployment Overview"
+          subtitle={scope.type === "tenant" ? scope.tenant.domain : "All tenants"}
+          actions={
             <Select defaultValue="portal-01">
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Select Portal" />
               </SelectTrigger>
               <SelectContent>
@@ -329,7 +327,9 @@ export default function DeploymentOverview() {
                 <SelectItem value="portal-03">Portal 03</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          }
+        />
+        <div className="p-8 space-y-6">
 
           <div className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
@@ -346,23 +346,30 @@ export default function DeploymentOverview() {
                       No version summary for this tenant.
                     </p>
                   ) : (
-                    latestVersions.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between py-2">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{item.icon}</span>
-                        <div>
-                          <p className="font-medium text-foreground">{item.name}</p>
-                          <p className="text-sm text-muted-foreground">{item.deviceCount} Devices</p>
+                    latestVersions.map((item) => {
+                      const VIcon = getDashboardVersionIcon(
+                        "icon" in item ? (item as { icon?: string }).icon : undefined,
+                      )
+                      return (
+                        <div key={item.name} className="flex items-center justify-between py-2">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                              <VIcon className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-foreground">{item.name}</p>
+                              <p className="text-sm text-muted-foreground">{item.deviceCount} Devices</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <StatusBadge status={item.status} />
+                            <Button variant="ghost" size="icon">
+                              <ArrowRight className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={item.status} />
-                        <Button variant="ghost" size="icon">
-                          <ArrowRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    ))
+                      )
+                    })
                   )}
                   <Button variant="ghost" className="w-full text-primary">
                     <ExternalLink className="h-4 w-4 mr-2" />

@@ -1,13 +1,16 @@
 {
-  "name": "my-v0-project",
+  "name": "ctera-ai-hub",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "build": "next build",
+    "predev": "node scripts/ensure-env.mjs",
     "dev": "next dev",
+    "prestart": "node scripts/ensure-env.mjs",
+    "start": "next start",
     "lint": "eslint .",
-    "start": "next start"
+    "start:hub": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-dev.ps1"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
