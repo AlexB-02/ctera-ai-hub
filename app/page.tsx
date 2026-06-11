@@ -17,7 +17,6 @@ import {
   CheckSquare,
   Sparkles,
   Download,
-  Server,
 } from "lucide-react"
 import { useEffect, useState, useMemo } from "react"
 import Link from "next/link"
@@ -59,25 +58,12 @@ export default function DashboardPage() {
     setGreeting(h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening")
   }, [])
 
-  // Top stats row. Storage/License mirror values already shown in the cards below;
-  // Adoption is real (tenant scope or fleet average). Active Devices has no field in
-  // /api/hub-data yet, so it is a clearly-labeled placeholder pending a real source.
+  // Feature adoption: real — active tenant, or fleet average in Global view.
   const statAdoption =
     scope.type === "tenant"
       ? scope.tenant.featureAdoption
       : Math.round(hub.tenants.reduce((a, t) => a + t.featureAdoption, 0) / Math.max(hub.tenants.length, 1))
-  const toneColor: Record<string, string> = {
-    critical: "var(--critical)",
-    warning: "var(--warning)",
-    primary: "var(--primary)",
-    success: "var(--success)",
-  }
-  const dashboardStats = [
-    { label: "Storage Used", icon: Database, value: "92 TB", sub: "of 100 TB", pct: 92, tone: "critical", delta: "+4 TB this week", placeholder: false },
-    { label: "Active Devices", icon: Server, value: "127", sub: "across 9 sites", pct: 84, tone: "primary", delta: "+3 vs last month", placeholder: true },
-    { label: "Feature Adoption", icon: CheckSquare, value: `${statAdoption}%`, sub: "tenant adoption", pct: statAdoption, tone: "primary", delta: "+12% this quarter", placeholder: false },
-    { label: "License Expiry", icon: Clock, value: "45 days", sub: "renews Mar 15", pct: 38, tone: "warning", delta: "Renewal due soon", placeholder: false },
-  ]
+  const devicesUpToDate = fleetDevices.filter((d) => d.status === "up-to-date").length
   const [isPollOpen, setIsPollOpen] = useState(false)
   const [pollAnswers, setPollAnswers] = useState({
     satisfaction: "",
@@ -188,60 +174,6 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* Top stats row */}
-          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {dashboardStats.map((s) => {
-              const color = toneColor[s.tone]
-              return (
-                <Card key={s.label} className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                      <s.icon className="h-4 w-4" />
-                      {s.label}
-                    </div>
-                    {s.placeholder && (
-                      <span
-                        className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground"
-                        style={{ background: "color-mix(in srgb, var(--muted-foreground) 12%, transparent)" }}
-                        title="Sample value — no device-count field in /api/hub-data yet"
-                      >
-                        Sample
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground">{s.value}</div>
-                  <div className="text-xs text-muted-foreground">{s.sub}</div>
-                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full" style={{ width: `${s.pct}%`, background: color }} />
-                  </div>
-                  <div className="mt-2 text-[11px] font-semibold" style={{ color }}>
-                    {s.delta}
-                  </div>
-                </Card>
-              )
-            })}
-          </div>
-
-          {showPortalFeatureSummary && scope.type === "tenant" && (
-            <Card className="mb-6 border-primary/25 bg-muted/40">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">{scope.tenant.name}</CardTitle>
-                <CardDescription>
-                  Feature inventory for {scope.tenant.domain}: {tenantAdoptionEnabled} of {tenantAdoption.prdData.length}{" "}
-                  features enabled (portal adoption {scope.tenant.featureAdoption}%).
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                <Button asChild variant="secondary" size="sm">
-                  <Link href="/feature-adoption">Open Feature Adoption</Link>
-                </Button>
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/portal">Open Deployment</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="text-base">AI Based Recommendations for You</CardTitle>
@@ -314,6 +246,27 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
+          {showPortalFeatureSummary && scope.type === "tenant" && (
+            <Card className="mb-6 border-primary/25 bg-muted/40">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{scope.tenant.name}</CardTitle>
+                <CardDescription>
+                  Feature inventory for {scope.tenant.domain}: {tenantAdoptionEnabled} of {tenantAdoption.prdData.length}{" "}
+                  features enabled (portal adoption {scope.tenant.featureAdoption}%).
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                <Button asChild variant="secondary" size="sm">
+                  <Link href="/feature-adoption">Open Feature Adoption</Link>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/portal">Open Deployment</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+
           <Card className="mb-6">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -326,25 +279,28 @@ export default function DashboardPage() {
                 const cards = [
                   <Card key="versions" className="h-full">
                     <CardHeader>
-                      <CardTitle className="font-display text-base">Installed Versions</CardTitle>
+                      <CardTitle className="text-[15px] font-bold text-foreground">Installed Versions</CardTitle>
                     </CardHeader>
                     <CardContent>
                       {latestVersions.length === 0 ? (
                         <p className="text-sm text-muted-foreground">No installed version data for this tenant.</p>
                       ) : (
-                        <div className="space-y-4">
+                        <div className="divide-y divide-border">
                           {latestVersions.map((item, i) => {
                             const VersionIcon = getDashboardVersionIcon(
                               "icon" in item ? (item as { icon?: string }).icon : undefined,
                             )
                             return (
-                              <div key={`${item.name}-${i}`} className="flex items-center justify-between">
+                              <div
+                                key={`${item.name}-${i}`}
+                                className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                              >
                                 <div className="flex items-center gap-3">
                                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                     <VersionIcon className="h-5 w-5" />
                                   </div>
                                   <div>
-                                    <div className="text-sm font-medium">{item.name}</div>
+                                    <div className="text-[13.5px] font-semibold text-foreground">{item.name}</div>
                                     <div className="text-xs text-muted-foreground">v{item.version}</div>
                                   </div>
                                 </div>
@@ -363,7 +319,7 @@ export default function DashboardPage() {
                   <Card key="fleet" className="h-full">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="font-display text-base">Device Fleet</CardTitle>
+                        <CardTitle className="text-[15px] font-bold text-foreground">Device Fleet</CardTitle>
                         <span className="text-xs text-muted-foreground">{fleetDevices.length} devices</span>
                       </div>
                     </CardHeader>
@@ -372,16 +328,19 @@ export default function DashboardPage() {
                         <p className="text-sm text-muted-foreground">No device data for this tenant.</p>
                       ) : (
                         <>
-                          <div className="space-y-3">
+                          <div className="divide-y divide-border">
                             {fleetDevices.slice(0, 3).map((d, i) => {
                               const Icon = getDeviceIcon("icon" in d ? (d as { icon?: string }).icon : undefined)
                               return (
-                                <div key={`${d.name}-${i}`} className="flex items-center gap-3">
+                                <div
+                                  key={`${d.name}-${i}`}
+                                  className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+                                >
                                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                     <Icon className="h-4 w-4" />
                                   </div>
                                   <div className="min-w-0 flex-1">
-                                    <div className="truncate text-sm font-medium">{d.name}</div>
+                                    <div className="truncate text-[13.5px] font-semibold text-foreground">{d.name}</div>
                                     <div className="truncate text-xs text-muted-foreground">{d.type}</div>
                                   </div>
                                   <StatusBadge status={d.status} />
@@ -389,7 +348,10 @@ export default function DashboardPage() {
                               )
                             })}
                           </div>
-                          <Button asChild variant="link" className="mt-3 h-auto p-0 text-sm">
+                          <div className="mt-3 text-[11px] font-semibold" style={{ color: "var(--success)" }}>
+                            {devicesUpToDate} of {fleetDevices.length} up to date
+                          </div>
+                          <Button asChild variant="link" className="mt-2 h-auto p-0 text-sm">
                             <Link href="/portal">
                               {fleetDevices.length > 3 ? `View all ${fleetDevices.length} in Deployment` : "View in Deployment"}
                               <ArrowRight className="ml-1 h-4 w-4" />
@@ -401,21 +363,25 @@ export default function DashboardPage() {
                   </Card>,
                   <Card key="adoption" className="h-full">
                     <CardHeader className="pb-3">
-                      <CardTitle className="font-display text-base">Feature Adoption Rate</CardTitle>
+                      <CardTitle className="text-[15px] font-bold text-foreground">Feature Adoption Rate</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-end justify-between">
-                        <div className="font-display text-4xl font-bold text-primary">{statAdoption}%</div>
+                      <div className="flex flex-col items-center gap-3 py-1">
+                        <div
+                          className="grid h-28 w-28 place-items-center rounded-full"
+                          style={{ background: `conic-gradient(var(--primary) ${statAdoption}%, var(--muted) 0)` }}
+                        >
+                          <div className="grid h-[88px] w-[88px] place-items-center rounded-full bg-card">
+                            <span className="font-display text-2xl font-bold text-primary">{statAdoption}%</span>
+                          </div>
+                        </div>
                         {tenantAdoption.prdData.length > 0 && (
                           <div className="text-xs text-muted-foreground">
-                            {tenantAdoptionEnabled} of {tenantAdoption.prdData.length} enabled
+                            {tenantAdoptionEnabled} of {tenantAdoption.prdData.length} features enabled
                           </div>
                         )}
                       </div>
-                      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-                        <div className="h-full rounded-full bg-primary" style={{ width: `${statAdoption}%` }} />
-                      </div>
-                      <p className="mt-3 text-xs text-muted-foreground">
+                      <p className="mt-2 text-center text-xs text-muted-foreground">
                         Capabilities enabled for {scope.type === "tenant" ? scope.tenant.name : "your fleet"}.
                       </p>
                       <Button asChild variant="link" className="mt-2 h-auto p-0 text-sm">
@@ -438,7 +404,7 @@ export default function DashboardPage() {
                       }}
                     >
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2 font-display text-base" style={{ color: "var(--warning)" }}>
+                        <CardTitle className="flex items-center gap-2 font-display text-sm font-bold" style={{ color: "var(--warning)" }}>
                           <Clock className="h-5 w-5" />
                           License Information
                         </CardTitle>
@@ -477,7 +443,7 @@ export default function DashboardPage() {
                       }}
                     >
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2 font-display text-base" style={{ color: "var(--critical)" }}>
+                        <CardTitle className="flex items-center gap-2 font-display text-sm font-bold" style={{ color: "var(--critical)" }}>
                           <Database className="h-5 w-5" />
                           Storage Overview
                         </CardTitle>
@@ -493,6 +459,9 @@ export default function DashboardPage() {
                             style={{ background: "color-mix(in srgb, var(--critical) 18%, transparent)" }}
                           >
                             <div className="h-3 rounded-full" style={{ width: "92%", background: "var(--critical)" }}></div>
+                          </div>
+                          <div className="text-[11px] font-semibold" style={{ color: "var(--critical)" }}>
+                            +4 TB this week
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
@@ -514,24 +483,24 @@ export default function DashboardPage() {
                       {Array.from({ length: Math.min(visible, count) }).map((_, o) => cards[(myCteraIndex + o) % count])}
                     </div>
                     {count > visible && (
-                      <div className="mt-4 flex items-center justify-center gap-4">
+                      <div className="mt-5 flex items-center justify-center gap-4">
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-8 w-8 bg-transparent"
+                          className="h-9 w-9 rounded-full border-border shadow-sm"
                           aria-label="Previous cards"
                           onClick={() => setMyCteraIndex((i) => (i - 1 + count) % count)}
                         >
                           <ChevronLeft className="h-4 w-4" />
                         </Button>
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-1.5">
                           {cards.map((_, i) => (
                             <button
                               key={i}
                               onClick={() => setMyCteraIndex(i)}
                               aria-label={`Go to card ${i + 1}`}
-                              className={`h-2 w-2 rounded-full transition-colors ${
-                                i === myCteraIndex ? "bg-primary" : "bg-muted-foreground/30"
+                              className={`h-2 rounded-full transition-all ${
+                                i === myCteraIndex ? "w-5 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
                               }`}
                             />
                           ))}
@@ -539,7 +508,7 @@ export default function DashboardPage() {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-8 w-8 bg-transparent"
+                          className="h-9 w-9 rounded-full border-border shadow-sm"
                           aria-label="Next cards"
                           onClick={() => setMyCteraIndex((i) => (i + 1) % count)}
                         >
