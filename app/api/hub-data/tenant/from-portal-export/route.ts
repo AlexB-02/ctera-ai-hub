@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server"
 import { ZodError } from "zod"
-import { tenantSchema } from "@/lib/hub-schema"
+import { customerSchema, deploymentSchema, tenantSchema } from "@/lib/hub-schema"
 import { isPortalExportJson } from "@/lib/portal-export-guards"
 import {
-  featureAdoptionFromPortalExport,
-  tenantFromPortalExport,
-} from "@/lib/portal-export-to-tenant"
+  upsertCustomerInHub,
+  upsertDeploymentInHub,
+  upsertDeploymentSpaceInHub,
+} from "@/lib/hub-customer-merge"
+import { upsertTenantInHub } from "@/lib/hub-tenant-merge"
+import {
+  customerFromPortalExport,
+  deploymentFromPortalExport,
+  deploymentSpaceFromPortalExport,
+  legacyTenantFromPortalExport,
+} from "@/lib/portal-export-to-deployment"
 import {
   loadEffectiveHubData,
   writeHubDocumentAtomic,
 } from "@/lib/hub-persist"
-import { upsertTenantInHub } from "@/lib/hub-tenant-merge"
 
 export const dynamic = "force-dynamic"
 
@@ -45,27 +52,31 @@ export async function POST(req: Request) {
   const portalName = url.searchParams.get("portal")?.trim() || undefined
 
   try {
-    const tenant = tenantFromPortalExport(body, { portalName })
+    const customer = customerFromPortalExport(body, { portalName })
+    const deployment = deploymentFromPortalExport(body, customer.id, { portalName })
+    const deploymentSpace = deploymentSpaceFromPortalExport(body)
+    const tenant = legacyTenantFromPortalExport(body, { portalName })
+
+    customerSchema.parse(customer)
+    deploymentSchema.parse(deployment)
     tenantSchema.parse(tenant)
-    const featureAdoption = featureAdoptionFromPortalExport(body)
 
     let hub = loadEffectiveHubData()
-    const existed = hub.tenants.some((t) => t.id === tenant.id)
+    const existed =
+      hub.deployments?.some((d) => d.id === deployment.id) ||
+      hub.tenants.some((t) => t.id === tenant.id)
+
+    hub = upsertCustomerInHub(hub, customer)
+    hub = upsertDeploymentInHub(hub, deployment)
+    hub = upsertDeploymentSpaceInHub(hub, deployment.id, deploymentSpace)
     hub = upsertTenantInHub(hub, tenant)
-    hub = {
-      ...hub,
-      tenantSpaces: {
-        ...hub.tenantSpaces,
-        [tenant.id]: {
-          ...hub.tenantSpaces?.[tenant.id],
-          featureAdoption,
-        },
-      },
-    }
+
     writeHubDocumentAtomic(hub)
 
     return NextResponse.json({
       ok: true,
+      customer,
+      deployment,
       tenant,
       mode: existed ? "updated" : "added",
     })

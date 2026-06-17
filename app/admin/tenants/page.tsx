@@ -52,6 +52,7 @@ function firstJsonFileFromDataTransfer(dt: DataTransfer): File | null {
 export default function AdminTenantsPage() {
   const { hub, reload } = useHub()
   const { tenants, globalStats } = hub
+  const { customers, allDeployments, setScope } = useTenant()
 
   const fileRef = useRef<HTMLInputElement>(null)
   const [jsonPaste, setJsonPaste] = useState("")
@@ -237,26 +238,36 @@ export default function AdminTenantsPage() {
   const [query, setQuery] = useState("")
   const [planFilter, setPlanFilter] = useState("All")
   const [statusFilter, setStatusFilter] = useState("All")
-  const { setScope } = useTenant()
   const router = useRouter()
 
+  const deploymentRows = useMemo(() => {
+    return allDeployments
+      .map((deployment) => {
+        const customer = customers.find((c) => c.id === deployment.customerId)
+        return customer ? { customer, deployment } : null
+      })
+      .filter((row): row is { customer: (typeof customers)[0]; deployment: (typeof allDeployments)[0] } => !!row)
+  }, [allDeployments, customers])
+
   const filtered = useMemo(() => {
-    return tenants.filter((t) => {
+    return deploymentRows.filter(({ customer, deployment }) => {
       const matchQuery =
         !query ||
-        t.name.toLowerCase().includes(query.toLowerCase()) ||
-        t.domain.toLowerCase().includes(query.toLowerCase()) ||
-        t.region.toLowerCase().includes(query.toLowerCase())
-      const matchPlan = planFilter === "All" || t.plan === planFilter
-      const matchStatus = statusFilter === "All" || t.status === statusFilter
+        customer.name.toLowerCase().includes(query.toLowerCase()) ||
+        deployment.dnsSuffix.toLowerCase().includes(query.toLowerCase()) ||
+        deployment.name.toLowerCase().includes(query.toLowerCase()) ||
+        customer.region.toLowerCase().includes(query.toLowerCase())
+      const matchPlan = planFilter === "All" || customer.plan === planFilter
+      const matchStatus = statusFilter === "All" || customer.status === statusFilter
       return matchQuery && matchPlan && matchStatus
     })
-  }, [query, planFilter, statusFilter, tenants])
+  }, [query, planFilter, statusFilter, deploymentRows])
 
-  const handleEnterTenant = (id: string) => {
-    const tenant = tenants.find((t) => t.id === id)
-    if (!tenant) return
-    setScope({ type: "tenant", tenant })
+  const handleEnterDeployment = (customerId: string, deploymentId: string) => {
+    const customer = customers.find((c) => c.id === customerId)
+    const deployment = allDeployments.find((d) => d.id === deploymentId && d.customerId === customerId)
+    if (!customer || !deployment) return
+    setScope({ type: "deployment", customer, deployment })
     router.push("/")
   }
 
@@ -300,7 +311,7 @@ export default function AdminTenantsPage() {
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <TopBar title="Tenants" subtitle={`${globalStats.totalTenants} tenants · ${globalStats.activeTenants} active`} />
+        <TopBar title="Customers" subtitle={`${customers.length} customers · ${allDeployments.length} deployments · ${globalStats.activeTenants} active`} />
 
         <div className="p-8 space-y-6">
           {/* Branded hero */}
@@ -317,11 +328,11 @@ export default function AdminTenantsPage() {
             />
             <div className="relative">
               <div className="flex items-center gap-1.5 text-[13px] font-medium text-white/75">
-                <Building2 className="h-3.5 w-3.5" /> Tenants
+                <Building2 className="h-3.5 w-3.5" /> Customers
               </div>
-              <h2 className="mt-2 text-[27px] font-bold tracking-tight text-white">Tenant management</h2>
+              <h2 className="mt-2 text-[27px] font-bold tracking-tight text-white">Customer management</h2>
               <p className="mt-1.5 max-w-xl text-sm text-white/85">
-                {globalStats.totalTenants} tenants · {globalStats.activeTenants} active across the platform.
+                {customers.length} customers · {allDeployments.length} deployments · {globalStats.activeTenants} active across the platform.
               </p>
             </div>
           </section>
@@ -330,8 +341,8 @@ export default function AdminTenantsPage() {
           <div className="grid grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-5">
-                <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Total tenants</div>
-                <div className="mt-2 font-display text-4xl font-bold tracking-tight tabular-nums text-foreground">{globalStats.totalTenants}</div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Customers</div>
+                <div className="mt-2 font-display text-4xl font-bold tracking-tight tabular-nums text-foreground">{customers.length}</div>
               </CardContent>
             </Card>
             <Card>
@@ -362,10 +373,10 @@ export default function AdminTenantsPage() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-[15px] font-semibold">Portal tenant</CardTitle>
+              <CardTitle className="text-[15px] font-semibold">Portal deployment</CardTitle>
               <p className="text-[13px] text-muted-foreground font-normal">
                 Run the SQL on the Portal database, copy the <code className="text-[12px]">export_json</code> result,
-                and import it below. The JSON includes tenant metadata, all feature categories (Infrastructure,
+                and import it below. The JSON includes deployment metadata, all feature categories (Infrastructure,
                 Services, Tenant Settings, Global Settings), and device list.
               </p>
             </CardHeader>
@@ -484,7 +495,7 @@ export default function AdminTenantsPage() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3 flex-wrap">
-                <CardTitle className="text-[15px] font-semibold">All tenants</CardTitle>
+                <CardTitle className="text-[15px] font-semibold">All deployments</CardTitle>
 
                 <div className="flex items-center gap-2 ml-auto flex-wrap">
                   {/* Plan filter */}
@@ -524,7 +535,7 @@ export default function AdminTenantsPage() {
                     <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                     <input
                       type="text"
-                      placeholder="Search tenants..."
+                      placeholder="Search customers or deployments..."
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
@@ -539,8 +550,9 @@ export default function AdminTenantsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-y border-border bg-muted/40 text-left">
-                      <Th>Tenant</Th>
-                      <Th>Region</Th>
+                      <Th>Customer</Th>
+                      <Th>Deployment</Th>
+                      <Th>DNS suffix</Th>
                       <Th>Plan</Th>
                       <Th className="text-right">Users</Th>
                       <Th className="text-right">Storage</Th>
@@ -550,47 +562,48 @@ export default function AdminTenantsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((t) => {
-                      const tier = adoptionTier(t.featureAdoption)
+                    {filtered.map(({ customer, deployment }) => {
+                      const tier = adoptionTier(customer.featureAdoption ?? 0)
                       return (
-                        <tr key={t.id} className="group border-b border-border last:border-b-0 transition-colors hover:bg-muted/20">
+                        <tr key={deployment.id} className="group border-b border-border last:border-b-0 transition-colors hover:bg-muted/20">
                           <Td>
                             <div className="flex items-center gap-2.5">
                               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                                 <Building2 className="h-3.5 w-3.5" />
                               </div>
                               <div className="min-w-0">
-                                <div className="text-[13px] font-medium text-foreground truncate">{t.name}</div>
-                                <div className="text-[11px] text-muted-foreground truncate">{t.domain}</div>
+                                <div className="text-[13px] font-medium text-foreground truncate">{customer.name}</div>
+                                <div className="text-[11px] text-muted-foreground truncate">{customer.region}</div>
                               </div>
                             </div>
                           </Td>
-                          <Td className="text-[13px] text-muted-foreground">{t.region}</Td>
+                          <Td className="text-[13px] text-foreground">{deployment.name}</Td>
+                          <Td className="text-[13px] text-muted-foreground font-mono text-[12px]">{deployment.dnsSuffix}</Td>
                           <Td>
-                            <Badge variant="outline" className="font-normal text-[11px]">{t.plan}</Badge>
+                            <Badge variant="outline" className="font-normal text-[11px]">{customer.plan}</Badge>
                           </Td>
-                          <Td className="text-right text-[13px] tabular-nums">{t.users.toLocaleString()}</Td>
-                          <Td className="text-right text-[13px] tabular-nums">{t.storage}</Td>
+                          <Td className="text-right text-[13px] tabular-nums">{(customer.users ?? 0).toLocaleString()}</Td>
+                          <Td className="text-right text-[13px] tabular-nums">{customer.storage ?? "—"}</Td>
                           <Td>
                             <div className="flex items-center gap-2.5">
                               <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
-                                <div className={cn("h-full rounded-full", tier.bar)} style={{ width: `${t.featureAdoption}%` }} />
+                                <div className={cn("h-full rounded-full", tier.bar)} style={{ width: `${customer.featureAdoption ?? 0}%` }} />
                               </div>
-                              <span className="text-[12px] font-semibold tabular-nums w-9" style={{ color: tier.color }}>{t.featureAdoption}%</span>
+                              <span className="text-[12px] font-semibold tabular-nums w-9" style={{ color: tier.color }}>{customer.featureAdoption ?? 0}%</span>
                               <span className={cn("rounded-full border px-1.5 py-0.5 text-[10px] font-medium", tier.className)}>
                                 {tier.label}
                               </span>
                             </div>
                           </Td>
                           <Td>
-                            <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize", statusStyle(t.status))}>
+                            <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize", statusStyle(deployment.status))}>
                               <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
-                              {t.status}
+                              {deployment.status}
                             </span>
                           </Td>
                           <Td>
                             <button
-                              onClick={() => handleEnterTenant(t.id)}
+                              onClick={() => handleEnterDeployment(customer.id, deployment.id)}
                               className="rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary whitespace-nowrap"
                             >
                               Enter →
@@ -603,7 +616,7 @@ export default function AdminTenantsPage() {
                 </table>
                 {filtered.length === 0 && (
                   <div className="px-6 py-12 text-center text-sm text-muted-foreground">
-                    No tenants match your filters
+                    No deployments match your filters
                   </div>
                 )}
               </div>

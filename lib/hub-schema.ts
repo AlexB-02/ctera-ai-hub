@@ -1,4 +1,8 @@
 import { z } from "zod"
+import { customerSchema, deploymentSchema } from "@/lib/customer-schema"
+
+export { customerSchema, deploymentSchema }
+export type { Customer, Deployment } from "@/lib/customer-schema"
 
 export const tenantSchema = z.object({
   id: z.string(),
@@ -26,6 +30,8 @@ export const hubDocumentSchema = z
   .object({
     version: z.literal(1),
     tenants: z.array(tenantSchema),
+    customers: z.array(customerSchema).optional(),
+    deployments: z.array(deploymentSchema).optional(),
     currentUser: currentUserSchema,
   })
   .passthrough()

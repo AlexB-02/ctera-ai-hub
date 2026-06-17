@@ -25,6 +25,12 @@ import { useHub } from "@/components/hub-provider"
 import { useTenant } from "@/components/tenant-context"
 import { getDashboardVersionIcon } from "@/lib/lucide-icon-map"
 import { effectivePortal } from "@/lib/tenant-hub-views"
+import { scopeDeploymentId, scopeLabel } from "@/lib/hub-scope"
+import { DeploymentServersPanel } from "@/components/deployment/deployment-servers-panel"
+import { DeploymentEdgeFilersPanel } from "@/components/deployment/deployment-edge-filers-panel"
+import { DeploymentAgentsPanel } from "@/components/deployment/deployment-agents-panel"
+import { DeploymentUpgradeHistoryPanel } from "@/components/deployment/deployment-upgrade-history-panel"
+import { DeploymentDbOverviewPanel } from "@/components/deployment/deployment-db-overview-panel"
 import type { PortalDevice } from "@/components/deployment-locations-map"
 import dynamic from "next/dynamic"
 
@@ -44,6 +50,8 @@ const DeploymentLocationsMap = dynamic(
 )
 
 type StoredLocationOverride = { lat: number; lng: number; label?: string }
+
+const DEVICE_LIST_TABS = new Set(["all-devices", "cloud-drives", "mobile-app"])
 
 const DEVICE_TYPES: PortalDevice["type"][] = [
   "CTERA Portal",
@@ -83,7 +91,8 @@ export default function DeploymentOverview() {
   const { hub } = useHub()
   const { scope } = useTenant()
   const { devices, latestVersions } = effectivePortal(hub, scope)
-  const scopeKey = scope.type === "global" ? "__global" : scope.tenant.id
+  const scopeKey = scopeDeploymentId(scope)
+  const { subtitle: deploymentSubtitle } = scopeLabel(scope)
 
   const manualStorageKey = `ctera-hub/deployment-manual-devices/v1/${scopeKey}`
   const overrideStorageKey = `ctera-hub/deployment-location-overrides/v1/${scopeKey}`
@@ -281,13 +290,12 @@ export default function DeploymentOverview() {
 
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [activeTab, setActiveTab] = useState("all-devices")
 
   const tabCounts = useMemo(() => {
-    const portals = devicesWithLocations.filter((d) => d.type === "CTERA Portal").length
-    const edge = devicesWithLocations.filter((d) => d.type === "CTERA Edge Filer").length
     const drives = devicesWithLocations.filter((d) => d.type === "CTERA Drive").length
     const mobile = devicesWithLocations.filter((d) => /mobile/i.test(d.type)).length
-    return { portals, edge, drives, mobile }
+    return { drives, mobile }
   }, [devicesWithLocations])
 
   const filteredDevices = useMemo(() => {
@@ -303,34 +311,28 @@ export default function DeploymentOverview() {
 
   const emptyDeploymentHint =
     devicesWithLocations.length === 0
-      ? "No deployment data for this tenant."
+      ? "No deployment data for this portal."
       : "No devices match your search or filter."
 
   const emptyCategoryHint =
-    devicesWithLocations.length === 0 ? "No deployment data for this tenant." : "No devices in this category."
+    devicesWithLocations.length === 0 ? "No deployment data for this portal." : "No devices in this category."
 
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <TopBar
-          title="Deployment Overview"
-          subtitle={scope.type === "tenant" ? scope.tenant.domain : "All tenants"}
-          actions={
-            <Select defaultValue="portal-01">
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Select Portal" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="portal-01">Portal 01</SelectItem>
-                <SelectItem value="portal-02">Portal 02</SelectItem>
-                <SelectItem value="portal-03">Portal 03</SelectItem>
-              </SelectContent>
-            </Select>
-          }
+          title="Deployment"
+          subtitle={scope.type === "deployment" ? deploymentSubtitle : "Select a customer deployment"}
         />
         <div className="p-8 space-y-6">
-
+          {scope.type === "global" ? (
+            <Card>
+              <CardContent className="py-12 text-center text-sm text-muted-foreground">
+                Choose a customer deployment from the sidebar switcher to view servers, edge devices, and upgrade history.
+              </CardContent>
+            </Card>
+          ) : (
           <div className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
@@ -400,22 +402,13 @@ export default function DeploymentOverview() {
               </Card>
             </div>
 
-            <Tabs defaultValue="all-devices">
+            <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="all-devices">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <TabsList className="flex-wrap">
                   <TabsTrigger value="all-devices">All Devices</TabsTrigger>
-                  <TabsTrigger value="portals">
-                    Portals{" "}
-                    <Badge variant="secondary" className="ml-2">
-                      {tabCounts.portals}
-                    </Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="edge-filers">
-                    Edge Filers{" "}
-                    <Badge variant="secondary" className="ml-2">
-                      {tabCounts.edge}
-                    </Badge>
-                  </TabsTrigger>
+                  <TabsTrigger value="servers">Servers</TabsTrigger>
+                  <TabsTrigger value="edge-filers">Edge Filers</TabsTrigger>
+                  <TabsTrigger value="agents">Agents</TabsTrigger>
                   <TabsTrigger value="cloud-drives">
                     Cloud Drives{" "}
                     <Badge variant="secondary" className="ml-2">
@@ -428,7 +421,10 @@ export default function DeploymentOverview() {
                       {tabCounts.mobile}
                     </Badge>
                   </TabsTrigger>
+                  <TabsTrigger value="upgrade-history">Upgrade History</TabsTrigger>
+                  <TabsTrigger value="db-overview">DB Overview</TabsTrigger>
                 </TabsList>
+                {DEVICE_LIST_TABS.has(activeTab) && (
                 <div className="flex flex-wrap items-center gap-2">
                   <Button type="button" size="sm" variant="outline" onClick={() => setAddDeviceOpen(true)}>
                     <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -444,7 +440,24 @@ export default function DeploymentOverview() {
                     />
                   </div>
                 </div>
+                )}
               </div>
+
+              <TabsContent value="servers" className="mt-6">
+                <DeploymentServersPanel />
+              </TabsContent>
+
+              <TabsContent value="agents" className="mt-6">
+                <DeploymentAgentsPanel />
+              </TabsContent>
+
+              <TabsContent value="upgrade-history" className="mt-6">
+                <DeploymentUpgradeHistoryPanel />
+              </TabsContent>
+
+              <TabsContent value="db-overview" className="mt-6">
+                <DeploymentDbOverviewPanel />
+              </TabsContent>
 
               <TabsContent value="all-devices" className="mt-6">
                 {statusFilter && (
@@ -483,60 +496,8 @@ export default function DeploymentOverview() {
                 )}
               </TabsContent>
 
-              <TabsContent value="portals">
-                {filteredDevices.filter((d) => d.type === "CTERA Portal").length === 0 ? (
-                  <p className="py-12 text-center text-sm text-muted-foreground">{emptyCategoryHint}</p>
-                ) : (
-                  <div className="grid gap-4">
-                    {filteredDevices
-                      .filter((d) => d.type === "CTERA Portal")
-                      .map((device) => (
-                        <Card key={device.id}>
-                          <CardContent className="p-6">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                              <div className="min-w-0 space-y-1">
-                                <div className="flex flex-wrap items-center gap-3">
-                                  <h3 className="text-lg font-semibold text-foreground">{device.name}</h3>
-                                  <Badge variant="outline">{device.type}</Badge>
-                                  <StatusBadge status={device.status} />
-                                </div>
-                                <p className="text-sm text-muted-foreground">{device.location}</p>
-                              </div>
-                              <DeviceRowActions device={device} onOpenLocationEditor={setLocationEditor} />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="edge-filers">
-                {filteredDevices.filter((d) => d.type === "CTERA Edge Filer").length === 0 ? (
-                  <p className="py-12 text-center text-sm text-muted-foreground">{emptyCategoryHint}</p>
-                ) : (
-                  <div className="grid gap-4">
-                    {filteredDevices
-                      .filter((d) => d.type === "CTERA Edge Filer")
-                      .map((device) => (
-                        <Card key={device.id}>
-                          <CardContent className="p-6">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                              <div className="min-w-0 space-y-1">
-                                <div className="flex flex-wrap items-center gap-3">
-                                  <h3 className="text-lg font-semibold text-foreground">{device.name}</h3>
-                                  <Badge variant="outline">{device.type}</Badge>
-                                  <StatusBadge status={device.status} />
-                                </div>
-                                <p className="text-sm text-muted-foreground">{device.location}</p>
-                              </div>
-                              <DeviceRowActions device={device} onOpenLocationEditor={setLocationEditor} />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                )}
+              <TabsContent value="edge-filers" className="mt-6">
+                <DeploymentEdgeFilersPanel />
               </TabsContent>
 
               <TabsContent value="cloud-drives">
@@ -572,6 +533,7 @@ export default function DeploymentOverview() {
               </TabsContent>
             </Tabs>
           </div>
+          )}
         </div>
 
         <Dialog

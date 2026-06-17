@@ -8,7 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Check, X } from "lucide-react"
 import { useHub } from "@/components/hub-provider"
 import { useTenant } from "@/components/tenant-context"
+import { scopeLabel } from "@/lib/hub-scope"
 import { effectiveFeatureAdoption } from "@/lib/tenant-hub-views"
+import { DeploymentEdgeAdoptionPanel } from "@/components/deployment/deployment-edge-adoption-panel"
 
 const categoryTints: Record<string, string> = {
   Infrastructure: "var(--primary)",
@@ -28,7 +30,8 @@ export default function FeatureAdoption() {
 
   const totalEnabled = prdData.filter((f) => f.enabled).length
   const totalDisabled = prdData.filter((f) => !f.enabled).length
-  const scopeLabel = scope.type === "global" ? "All tenants (reference catalog)" : scope.tenant.domain
+  const { subtitle: scopeSubtitle } = scopeLabel(scope)
+  const scopeDisplay = scope.type === "global" ? "All customers (reference catalog)" : scopeSubtitle
 
   const filterCards = [
     { key: "all", label: "Total", value: prdData.length, tint: "var(--primary)", sub: "all features" },
@@ -56,7 +59,7 @@ export default function FeatureAdoption() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <TopBar title="Feature Adoption" subtitle={`Feature status for ${scopeLabel}`} />
+        <TopBar title="Feature Adoption" subtitle={`Feature status for ${scopeDisplay}`} />
         <div className="space-y-6 p-8">
           {/* Filter cards — click to filter the table below */}
           <div
@@ -89,6 +92,8 @@ export default function FeatureAdoption() {
               )
             })}
           </div>
+
+          {scope.type === "deployment" && <DeploymentEdgeAdoptionPanel />}
 
           {/* Filtered feature table */}
           <Card className="shadow-none">

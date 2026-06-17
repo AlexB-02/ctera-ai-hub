@@ -15,6 +15,7 @@ import { Check, X } from "lucide-react"
 import { useHub } from "@/components/hub-provider"
 import { useTenant } from "@/components/tenant-context"
 import { effectiveFeatureAdoption } from "@/lib/tenant-hub-views"
+import { scopeLabel as hubScopeLabel } from "@/lib/hub-scope"
 
 const categoryColors: Record<string, string> = {
   Infrastructure: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
@@ -33,8 +34,8 @@ export default function FeatureAdoptionPRD() {
 
   const totalEnabled = prdData.filter((f) => f.enabled).length
   const totalDisabled = prdData.filter((f) => !f.enabled).length
-  const scopeLabel =
-    scope.type === "global" ? "All tenants (reference catalog)" : scope.tenant.domain
+  const { subtitle } = hubScopeLabel(scope)
+  const scopeDisplay = scope.type === "global" ? "All customers (reference catalog)" : subtitle
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -51,7 +52,7 @@ export default function FeatureAdoptionPRD() {
             </div>
             <p className="text-muted-foreground">
               Complete feature inventory and requirements for{" "}
-              <span className="font-medium text-foreground">{scopeLabel}</span>
+              <span className="font-medium text-foreground">{scopeDisplay}</span>
             </p>
           </div>
 

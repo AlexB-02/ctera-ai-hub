@@ -45,7 +45,7 @@ const tenantNavigation = [
 
 const adminNavigation = [
   { name: "Global View", href: "/admin", icon: Globe },
-  { name: "Tenants", href: "/admin/tenants", icon: Building2 },
+  { name: "Customers", href: "/admin/tenants", icon: Building2 },
   { name: "Downloads Center", href: "/admin/downloads", icon: Download },
   { name: "Feature Adoption", href: "/admin/feature-adoption", icon: CheckSquare },
   { name: "Users", href: "/admin/users", icon: Users },
@@ -90,26 +90,27 @@ function NavItem({
   )
 }
 
-function TenantSwitcherInline() {
-  const { hub } = useHub()
-  if (!hub) return null
-  const tenants = hub.tenants
-  const { scope, setScope } = useTenant()
+function CustomerDeploymentSwitcher() {
+  const { customers, allDeployments, deploymentsForCustomer, scope, setScope } = useTenant()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
+  const [expandedCustomerId, setExpandedCustomerId] = useState<string | null>(null)
   const router = useRouter()
   const pathname = usePathname()
 
-  const filtered = useMemo(() => {
+  const filteredCustomers = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return tenants
-    return tenants.filter(
-      (t) => t.name.toLowerCase().includes(q) || t.domain.toLowerCase().includes(q),
-    )
-  }, [query, tenants])
+    if (!q) return customers
+    return customers.filter((c) => {
+      if (c.name.toLowerCase().includes(q)) return true
+      return deploymentsForCustomer(c.id).some((d) => d.dnsSuffix.toLowerCase().includes(q) || d.name.toLowerCase().includes(q))
+    })
+  }, [query, customers, deploymentsForCustomer])
 
-  const label = scope.type === "global" ? "Global view" : scope.tenant.name
-  const sub = scope.type === "global" ? "All tenants" : scope.tenant.domain
+  const { title: label, subtitle: sub } =
+    scope.type === "global"
+      ? { title: "Global view", subtitle: "All customers" }
+      : { title: scope.customer.name, subtitle: scope.deployment.dnsSuffix }
 
   const handleSelectGlobal = () => {
     setScope({ type: "global" })
@@ -117,16 +118,17 @@ function TenantSwitcherInline() {
     router.push("/admin")
   }
 
-  const handleSelectTenant = (id: string) => {
-    const tenant = tenants.find((t) => t.id === id)
-    if (!tenant) return
-    setScope({ type: "tenant", tenant })
+  const handleSelectDeployment = (customerId: string, deploymentId: string) => {
+    const customer = customers.find((c) => c.id === customerId)
+    const deployment = allDeployments.find((d) => d.id === deploymentId && d.customerId === customerId)
+    if (!customer || !deployment) return
+    setScope({ type: "deployment", customer, deployment })
     setOpen(false)
-    // If currently on an admin page, navigate to tenant dashboard
-    if (pathname.startsWith("/admin")) {
-      router.push("/")
-    }
+    if (pathname.startsWith("/admin")) router.push("/")
   }
+
+  const isActiveDeployment = (deploymentId: string) =>
+    scope.type === "deployment" && scope.deployment.id === deploymentId
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -151,21 +153,21 @@ function TenantSwitcherInline() {
           <ChevronsUpDown className="h-3 w-3 flex-shrink-0 text-sidebar-foreground/40" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px] p-0" align="start" side="right" sideOffset={12}>
+      <PopoverContent className="w-[300px] p-0" align="start" side="right" sideOffset={12}>
         <div className="border-b border-border p-2">
           <div className="flex items-center gap-2 rounded-md bg-muted/60 px-2.5 py-1.5">
             <Search className="h-3.5 w-3.5 text-muted-foreground" />
             <input
               autoFocus
               type="text"
-              placeholder="Search tenants..."
+              placeholder="Search customers or deployments..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
           </div>
         </div>
-        <div className="max-h-[400px] overflow-y-auto p-1.5">
+        <div className="max-h-[420px] overflow-y-auto p-1.5">
           <p className="px-2 pb-1 pt-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             Admin
           </p>
@@ -182,55 +184,60 @@ function TenantSwitcherInline() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-medium text-foreground">Global view</div>
-              <div className="text-[11px] text-muted-foreground">Cross-tenant administration</div>
+              <div className="text-[11px] text-muted-foreground">Cross-customer administration</div>
             </div>
             {scope.type === "global" && <Check className="h-3.5 w-3.5 text-primary" />}
           </button>
 
           <p className="mt-1 px-2 pb-1 pt-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Tenants ({filtered.length})
+            Customers ({filteredCustomers.length})
           </p>
-          {filtered.length === 0 ? (
-            <div className="py-6 text-center text-sm text-muted-foreground">No tenants found</div>
+          {filteredCustomers.length === 0 ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">No customers found</div>
           ) : (
-            filtered.map((tenant) => {
-              const isActive = scope.type === "tenant" && scope.tenant.id === tenant.id
+            filteredCustomers.map((customer) => {
+              const deps = deploymentsForCustomer(customer.id)
+              const expanded = expandedCustomerId === customer.id || query.length > 0
               return (
-                <button
-                  key={tenant.id}
-                  type="button"
-                  onClick={() => handleSelectTenant(tenant.id)}
-                  className={cn(
-                    "flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-muted/70",
-                    isActive && "bg-muted",
+                <div key={customer.id} className="mb-1">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedCustomerId(expanded ? null : customer.id)}
+                    className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-muted/70"
+                  >
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-muted">
+                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13px] font-medium text-foreground">{customer.name}</div>
+                      <div className="truncate text-[11px] text-muted-foreground">
+                        {deps.length} deployment{deps.length === 1 ? "" : "s"}
+                      </div>
+                    </div>
+                  </button>
+                  {expanded && (
+                    <div className="ml-4 border-l border-border pl-2">
+                      {deps.map((dep) => (
+                        <button
+                          key={dep.id}
+                          type="button"
+                          onClick={() => handleSelectDeployment(customer.id, dep.id)}
+                          className={cn(
+                            "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-muted/70",
+                            isActiveDeployment(dep.id) && "bg-muted",
+                          )}
+                        >
+                          <Server className="h-3 w-3 text-muted-foreground" />
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate font-medium">{dep.name}</div>
+                            <div className="truncate text-[10px] text-muted-foreground">{dep.dnsSuffix}</div>
+                          </div>
+                          {isActiveDeployment(dep.id) && <Check className="h-3 w-3 text-primary" />}
+                        </button>
+                      ))}
+                    </div>
                   )}
-                >
-                  <div className="relative flex h-7 w-7 items-center justify-center rounded-md bg-muted">
-                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span
-                      aria-hidden
-                      className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-popover"
-                      style={{
-                        background:
-                          tenant.status === "active"
-                            ? "#2a9d8f"
-                            : tenant.status === "trial"
-                              ? "#cd7a0c"
-                              : "#d92d20",
-                      }}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[13px] font-medium text-foreground">{tenant.name}</div>
-                    <div className="truncate text-[11px] text-muted-foreground">{tenant.domain}</div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] tabular-nums text-muted-foreground">
-                      {tenant.users} users · {tenant.featureAdoption}%
-                    </span>
-                    {isActive && <Check className="h-3.5 w-3.5 text-primary" />}
-                  </div>
-                </button>
+                </div>
               )
             })
           )}
@@ -264,7 +271,7 @@ export function Sidebar() {
 
       {/* Tenant / scope switcher — always visible */}
       <div className="px-3 pb-3">
-        <TenantSwitcherInline />
+        <CustomerDeploymentSwitcher />
       </div>
 
       <div className="h-px bg-sidebar-border mx-3 mb-2" />

@@ -26,13 +26,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { useHub } from "@/components/hub-provider"
 import { useTenant } from "@/components/tenant-context"
-import { effectiveDashboard, effectiveFeatureAdoption, tenantUsesFeaturesOnlyViews } from "@/lib/tenant-hub-views"
+import { effectiveDashboard, effectiveFeatureAdoption, deploymentUsesFeaturesOnlyViews } from "@/lib/tenant-hub-views"
 import { getDashboardNewsIcon, getDashboardVersionIcon, getDeviceIcon } from "@/lib/lucide-icon-map"
 import { seedHubData } from "@/lib/seed-hub"
 
 export default function DashboardPage() {
   const { hub } = useHub()
-  const { scope } = useTenant()
+  const { scope, customers } = useTenant()
   const dashboard = effectiveDashboard(hub, scope)
   const { newsItems, latestVersions, latestNewsItems, myCteraSpaceLastUpdated } = dashboard
   const latestNewsForDisplay = useMemo(() => {
@@ -42,7 +42,7 @@ export default function DashboardPage() {
     return seedHubData.dashboard.latestNewsItems
   }, [latestNewsItems, hub.dashboard.latestNewsItems])
 
-  const isFeaturesOnlyTenant = scope.type === "tenant" && tenantUsesFeaturesOnlyViews(scope.tenant)
+  const isFeaturesOnlyDeployment = deploymentUsesFeaturesOnlyViews(hub, scope)
 
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0)
   const [currentLatestNewsIndex, setCurrentLatestNewsIndex] = useState(0)
@@ -60,9 +60,11 @@ export default function DashboardPage() {
 
   // Feature adoption: real — active tenant, or fleet average in Global view.
   const statAdoption =
-    scope.type === "tenant"
-      ? scope.tenant.featureAdoption
-      : Math.round(hub.tenants.reduce((a, t) => a + t.featureAdoption, 0) / Math.max(hub.tenants.length, 1))
+    scope.type === "deployment"
+      ? scope.customer.featureAdoption ?? 0
+      : Math.round(
+          customers.reduce((a, c) => a + (c.featureAdoption ?? 0), 0) / Math.max(customers.length, 1),
+        )
   const devicesUpToDate = fleetDevices.filter((d) => d.status === "up-to-date").length
   const recGradients = [
     "linear-gradient(135deg,#505be5,#2526a9)",
@@ -132,7 +134,7 @@ export default function DashboardPage() {
   const tenantAdoption = effectiveFeatureAdoption(hub, scope)
   const tenantAdoptionEnabled = tenantAdoption.prdData.filter((f) => f.enabled).length
   const showPortalFeatureSummary =
-    isFeaturesOnlyTenant && tenantAdoption.prdData.length > 0
+    isFeaturesOnlyDeployment && tenantAdoption.prdData.length > 0
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -284,13 +286,13 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {showPortalFeatureSummary && scope.type === "tenant" && (
+          {showPortalFeatureSummary && scope.type === "deployment" && (
             <Card className="mb-6 border-primary/25 bg-muted/40">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">{scope.tenant.name}</CardTitle>
+                <CardTitle className="text-base">{scope.customer.name}</CardTitle>
                 <CardDescription>
-                  Feature inventory for {scope.tenant.domain}: {tenantAdoptionEnabled} of {tenantAdoption.prdData.length}{" "}
-                  features enabled (portal adoption {scope.tenant.featureAdoption}%).
+                  Feature inventory for {scope.deployment.dnsSuffix}: {tenantAdoptionEnabled} of {tenantAdoption.prdData.length}{" "}
+                  features enabled (portal adoption {scope.customer.featureAdoption ?? 0}%).
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
@@ -420,7 +422,7 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <p className="mt-2 text-center text-xs text-muted-foreground">
-                        Capabilities enabled for {scope.type === "tenant" ? scope.tenant.name : "your fleet"}.
+                        Capabilities enabled for {scope.type === "deployment" ? scope.customer.name : "your fleet"}.
                       </p>
                       <Button asChild variant="link" className="mt-2 h-auto p-0 text-sm">
                         <Link href="/feature-adoption">
@@ -431,7 +433,7 @@ export default function DashboardPage() {
                     </CardContent>
                   </Card>,
                 ]
-                if (!isFeaturesOnlyTenant) {
+                if (!isFeaturesOnlyDeployment) {
                   cards.push(
                     <Card
                       key="license"
