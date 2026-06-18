@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "This JSON is a feature inventory export, not a single tenant. Use POST /api/hub-data/tenant/from-features or the “feature inventory” import on Admin → Tenants.",
+            "This JSON is a feature inventory export, not a single tenant. Use POST /api/hub-data/tenant/from-features or import the array via Admin → Tenants.",
         },
         { status: 400 },
       )

@@ -10,10 +10,10 @@ import { cn } from "@/lib/utils"
 import type { Tenant } from "@/lib/hub-schema"
 
 const adoptionTier = (pct: number) => {
-  if (pct >= 80) return { label: "High", className: "text-emerald-700 bg-emerald-50 border-emerald-200", bar: "bg-emerald-500" }
-  if (pct >= 60) return { label: "Medium", className: "text-blue-700 bg-blue-50 border-blue-200", bar: "bg-blue-500" }
-  if (pct >= 40) return { label: "Low", className: "text-amber-700 bg-amber-50 border-amber-200", bar: "bg-amber-500" }
-  return { label: "Very Low", className: "text-red-700 bg-red-50 border-red-200", bar: "bg-red-500" }
+  if (pct >= 80) return { label: "High", color: "var(--success)", bar: "bg-success" }
+  if (pct >= 60) return { label: "Medium", color: "var(--primary)", bar: "bg-primary" }
+  if (pct >= 40) return { label: "Low", color: "var(--warning)", bar: "bg-warning" }
+  return { label: "Very Low", color: "var(--critical)", bar: "bg-critical" }
 }
 
 export default function AdminGlobalPage() {
@@ -54,25 +54,50 @@ export default function AdminGlobalPage() {
         <TopBar title="Global View" subtitle="Platform-wide overview" />
 
         <div className="p-8 space-y-6">
+          {/* Branded hero */}
+          <section
+            className="relative overflow-hidden rounded-2xl px-8 py-7 text-white shadow-md"
+            style={{ background: "var(--grad-customers)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/ctera-curve.svg"
+              alt=""
+              aria-hidden
+              className="pointer-events-none absolute right-6 top-5 w-36 opacity-15"
+            />
+            <div className="relative">
+              <div className="flex items-center gap-1.5 text-[13px] font-medium text-white/75">
+                <Globe className="h-3.5 w-3.5" /> Global View
+              </div>
+              <h2 className="mt-2 text-[27px] font-bold tracking-tight text-white">Platform-wide overview</h2>
+              <p className="mt-1.5 max-w-xl text-sm text-white/85">
+                Feature adoption, tenant health and usage across all {globalStats.totalTenants} tenants.
+              </p>
+            </div>
+          </section>
+
           {/* Hero KPI */}
           <div className="grid grid-cols-3 gap-4">
-            <Card className="col-span-1 border-foreground/10 bg-gradient-to-br from-card to-muted/30">
+            <Card className="col-span-1 border-primary/15 bg-gradient-to-br from-card to-primary/5">
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 text-muted-foreground mb-3">
                   <Globe className="h-3.5 w-3.5" />
                   <span className="text-[11px] font-medium uppercase tracking-wider">Global feature adoption</span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-semibold tracking-tight tabular-nums">{globalStats.averageFeatureAdoption}</span>
+                  <span className="font-display text-5xl font-bold tracking-tight tabular-nums text-primary">
+                    {globalStats.averageFeatureAdoption}
+                  </span>
                   <span className="text-2xl font-medium text-muted-foreground">%</span>
                 </div>
                 <p className="mt-1.5 text-sm text-muted-foreground">Avg across {globalStats.totalTenants} tenants</p>
                 <div className="mt-4">
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-foreground" style={{ width: `${globalStats.averageFeatureAdoption}%` }} />
+                    <div className="h-full rounded-full bg-primary" style={{ width: `${globalStats.averageFeatureAdoption}%` }} />
                   </div>
                 </div>
-                <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-emerald-700">
+                <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium" style={{ color: "var(--success)" }}>
                   <TrendingUp className="h-3 w-3" />
                   +4.2% vs last month
                 </div>
@@ -85,10 +110,10 @@ export default function AdminGlobalPage() {
                   <Building2 className="h-3.5 w-3.5" />
                   <span className="text-[11px] font-medium uppercase tracking-wider">Active tenants</span>
                 </div>
-                <div className="text-5xl font-semibold tracking-tight tabular-nums">{globalStats.activeTenants}</div>
+                <div className="font-display text-5xl font-bold tracking-tight tabular-nums text-foreground">{globalStats.activeTenants}</div>
                 <p className="mt-1.5 text-sm text-muted-foreground">of {globalStats.totalTenants} total</p>
                 <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.round((globalStats.activeTenants / globalStats.totalTenants) * 100)}%` }} />
+                  <div className="h-full rounded-full bg-success" style={{ width: `${Math.round((globalStats.activeTenants / globalStats.totalTenants) * 100)}%` }} />
                 </div>
               </CardContent>
             </Card>
@@ -99,7 +124,7 @@ export default function AdminGlobalPage() {
                   <Users className="h-3.5 w-3.5" />
                   <span className="text-[11px] font-medium uppercase tracking-wider">Total users</span>
                 </div>
-                <div className="text-5xl font-semibold tracking-tight tabular-nums">{globalStats.totalUsers.toLocaleString()}</div>
+                <div className="font-display text-5xl font-bold tracking-tight tabular-nums text-foreground">{globalStats.totalUsers.toLocaleString()}</div>
                 <p className="mt-1.5 text-sm text-muted-foreground">across all tenants</p>
               </CardContent>
             </Card>
@@ -109,10 +134,10 @@ export default function AdminGlobalPage() {
           <div className="grid grid-cols-3 gap-4">
             {quickLinks.map((link) => (
               <Link key={link.href} href={link.href}>
-                <Card className="group cursor-pointer transition-all hover:shadow-md hover:border-foreground/20">
+                <Card className="group cursor-pointer transition-all hover:shadow-md hover:border-primary/30">
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-foreground group-hover:bg-foreground group-hover:text-background transition-colors">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                         <link.icon className="h-4 w-4" />
                       </div>
                       <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -136,17 +161,17 @@ export default function AdminGlobalPage() {
             <CardContent>
               <div className="grid gap-3 grid-cols-4">
                 {[
-                  { label: "High (80–100%)", count: tenants.filter((t) => t.featureAdoption >= 80).length, color: "bg-emerald-500" },
-                  { label: "Medium (60–79%)", count: tenants.filter((t) => t.featureAdoption >= 60 && t.featureAdoption < 80).length, color: "bg-blue-500" },
-                  { label: "Low (40–59%)", count: tenants.filter((t) => t.featureAdoption >= 40 && t.featureAdoption < 60).length, color: "bg-amber-500" },
-                  { label: "Very low (<40%)", count: tenants.filter((t) => t.featureAdoption < 40).length, color: "bg-red-500" },
+                  { label: "High (80–100%)", count: tenants.filter((t) => t.featureAdoption >= 80).length, color: "bg-success" },
+                  { label: "Medium (60–79%)", count: tenants.filter((t) => t.featureAdoption >= 60 && t.featureAdoption < 80).length, color: "bg-primary" },
+                  { label: "Low (40–59%)", count: tenants.filter((t) => t.featureAdoption >= 40 && t.featureAdoption < 60).length, color: "bg-warning" },
+                  { label: "Very low (<40%)", count: tenants.filter((t) => t.featureAdoption < 40).length, color: "bg-critical" },
                 ].map((tier) => (
                   <div key={tier.label} className="rounded-lg border border-border bg-muted/30 p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className={cn("h-2 w-2 rounded-full", tier.color)} />
                       <span className="text-[11px] font-medium text-muted-foreground">{tier.label}</span>
                     </div>
-                    <div className="text-2xl font-semibold tracking-tight tabular-nums">{tier.count}</div>
+                    <div className="font-display text-2xl font-bold tracking-tight tabular-nums">{tier.count}</div>
                     <div className="text-[11px] text-muted-foreground">
                       {Math.round((tier.count / globalStats.totalTenants) * 100)}% of tenants
                     </div>
@@ -159,7 +184,7 @@ export default function AdminGlobalPage() {
           {/* Top & bottom tenants side by side */}
           <div className="grid grid-cols-2 gap-4">
             <TenantRankCard title="Top adopters" tenants={topTenants} />
-            <TenantRankCard title="Need attention" tenants={bottomTenants} reverse />
+            <TenantRankCard title="Need attention" tenants={bottomTenants} />
           </div>
         </div>
       </main>
@@ -170,11 +195,9 @@ export default function AdminGlobalPage() {
 function TenantRankCard({
   title,
   tenants: list,
-  reverse,
 }: {
   title: string
   tenants: Tenant[]
-  reverse?: boolean
 }) {
   return (
     <Card>
@@ -191,7 +214,7 @@ function TenantRankCard({
           const tier = adoptionTier(t.featureAdoption)
           return (
             <div key={t.id} className="flex items-center gap-3 px-5 py-2.5 hover:bg-muted/30 transition-colors">
-              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-muted text-[11px] font-medium text-muted-foreground">
+              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-[11px] font-semibold text-primary">
                 {t.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
@@ -202,7 +225,7 @@ function TenantRankCard({
                 <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
                   <div className={cn("h-full rounded-full", tier.bar)} style={{ width: `${t.featureAdoption}%` }} />
                 </div>
-                <span className={cn("text-[12px] font-semibold tabular-nums w-9 text-right", reverse ? "text-amber-600" : "text-emerald-600")}>
+                <span className="text-[12px] font-semibold tabular-nums w-9 text-right" style={{ color: tier.color }}>
                   {t.featureAdoption}%
                 </span>
               </div>

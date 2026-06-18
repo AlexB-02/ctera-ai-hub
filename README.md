@@ -1,6 +1,31 @@
-# CTERA AI Hub (JSON-driven)
+# CTERA AI Hub (Customer Hub)
 
 Next.js app with hub content loaded from **`GET /api/hub-data`**. The default dataset lives in [`lib/seed-hub`](lib/seed-hub); validated uploads are stored in **`data/hub.json`** (gitignored).
+
+## Quick start
+
+From the repo root:
+
+```powershell
+# Windows (installs deps, creates .env.local if missing, starts dev server)
+pnpm start:hub
+```
+
+Or manually:
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Open **http://localhost:3000**. Verify the API: **http://localhost:3000/api/hub-data**
+
+Production build:
+
+```bash
+pnpm build
+pnpm start
+```
 
 ## Environment
 

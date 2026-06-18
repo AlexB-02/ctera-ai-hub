@@ -116,12 +116,12 @@ function initials(u: AdminUser) {
 
 function avatarColor(id: string) {
   const colors = [
-    "from-blue-500 to-blue-600",
-    "from-violet-500 to-violet-600",
-    "from-emerald-500 to-emerald-600",
-    "from-amber-500 to-amber-600",
-    "from-rose-500 to-rose-600",
-    "from-cyan-500 to-cyan-600",
+    "var(--grad-primary)",
+    "var(--grad-customers)",
+    "var(--grad-teal)",
+    "var(--grad-orange)",
+    "var(--grad-partners)",
+    "var(--grad-internal)",
   ]
   return colors[parseInt(id, 10) % colors.length]
 }
@@ -223,18 +223,41 @@ export default function AdminUsersPage() {
           }
         />
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Branded hero */}
+          <section
+            className="relative overflow-hidden rounded-2xl px-8 py-7 text-white shadow-md"
+            style={{ background: "var(--grad-customers)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/ctera-curve.svg"
+              alt=""
+              aria-hidden
+              className="pointer-events-none absolute right-6 top-5 w-36 opacity-15"
+            />
+            <div className="relative">
+              <div className="flex items-center gap-1.5 text-[13px] font-medium text-white/75">
+                <ShieldCheck className="h-3.5 w-3.5" /> Administrators
+              </div>
+              <h2 className="mt-2 text-[27px] font-bold tracking-tight text-white">Manage platform access</h2>
+              <p className="mt-1.5 max-w-xl text-sm text-white/85">
+                {users.length} administrators with SSO-based access, {activeCount} active.
+              </p>
+            </div>
+          </section>
+
           {/* Stats row */}
-          <div className="mb-6 grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             {[
               { label: "Total Administrators", value: users.length, sub: "All access levels" },
               { label: "Read/Write", value: rwCount, sub: "Full management access" },
               { label: "Read-Only", value: roCount, sub: "View-only access" },
             ].map((s) => (
               <div key={s.label} className="rounded-xl border border-border bg-card p-4">
-                <div className="text-[28px] font-semibold tracking-tight text-foreground">{s.value}</div>
-                <div className="text-[13px] font-medium text-foreground">{s.label}</div>
-                <div className="text-[11px] text-muted-foreground">{s.sub}</div>
+                <div className="font-display text-[28px] font-bold tracking-tight tabular-nums text-primary">{s.value}</div>
+                <div className="mt-0.5 text-[13px] font-medium text-foreground">{s.label}</div>
+                <div className="text-[11px] uppercase tracking-wide font-medium text-muted-foreground">{s.sub}</div>
               </div>
             ))}
           </div>
@@ -300,10 +323,8 @@ export default function AdminUsersPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div
-                            className={cn(
-                              "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-[11px] font-semibold text-white",
-                              avatarColor(u.id),
-                            )}
+                            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
+                            style={{ background: avatarColor(u.id) }}
                           >
                             {initials(u)}
                           </div>
@@ -324,9 +345,9 @@ export default function AdminUsersPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           {u.role === "Read/Write Administrator" ? (
-                            <ShieldCheck className="h-3.5 w-3.5 text-blue-500" />
+                            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                           ) : (
-                            <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
+                            <ShieldAlert className="h-3.5 w-3.5 text-warning" />
                           )}
                           <span className="text-[12px] text-foreground">{u.role}</span>
                         </div>
@@ -334,16 +355,16 @@ export default function AdminUsersPage() {
                       <td className="px-4 py-3">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium",
                             u.status === "Active"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-red-50 text-red-600",
+                              ? "bg-success/10 text-success border-success/30"
+                              : "bg-critical/10 text-critical border-critical/30",
                           )}
                         >
                           <span
                             className={cn(
                               "h-1.5 w-1.5 rounded-full",
-                              u.status === "Active" ? "bg-emerald-500" : "bg-red-500",
+                              u.status === "Active" ? "bg-success" : "bg-critical",
                             )}
                           />
                           {u.status}
@@ -483,18 +504,18 @@ export default function AdminUsersPage() {
                       label: "Read / Write",
                       description: "Full management access — create, edit, delete across all areas.",
                       icon: ShieldCheck,
-                      activeColor: "border-blue-500 bg-blue-50",
-                      iconColor: "text-blue-500",
-                      badgeColor: "bg-blue-500",
+                      activeColor: "border-primary bg-primary/10",
+                      iconColor: "text-primary",
+                      badgeColor: "bg-primary",
                     },
                     {
                       value: "Read-Only Administrator",
                       label: "Read Only",
                       description: "View all data and reports. Cannot make any changes.",
                       icon: ShieldAlert,
-                      activeColor: "border-amber-400 bg-amber-50",
-                      iconColor: "text-amber-500",
-                      badgeColor: "bg-amber-400",
+                      activeColor: "border-warning bg-warning/10",
+                      iconColor: "text-warning",
+                      badgeColor: "bg-warning",
                     },
                   ] as const
                 ).map((opt) => {

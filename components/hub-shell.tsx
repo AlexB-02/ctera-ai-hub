@@ -1,9 +1,13 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { usePathname } from "next/navigation"
 import { HubProvider, useHub } from "@/components/hub-provider"
 import { TenantProvider } from "@/components/tenant-context"
 import { AIChatWidget } from "@/components/ai-chat-widget"
+
+/** Routes that render standalone, outside the authenticated hub shell. */
+const STANDALONE_ROUTES = ["/login", "/welcome"]
 
 function HubReady({ children }: { children: ReactNode }) {
   const { hub, loading, error } = useHub()
@@ -29,6 +33,13 @@ function HubReady({ children }: { children: ReactNode }) {
 }
 
 export function HubShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
+
+  // Pre-auth screens (e.g. /login) render on their own, without hub data or the AI widget.
+  if (pathname && STANDALONE_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"))) {
+    return <>{children}</>
+  }
+
   return (
     <HubProvider>
       <HubReady>

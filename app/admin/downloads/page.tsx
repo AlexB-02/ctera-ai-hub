@@ -228,10 +228,33 @@ export default function AdminDownloadsPage() {
         <TopBar title="Downloads Center" subtitle="Manage files available to tenants" />
 
         <div className="p-8 space-y-6">
+          {/* Branded hero */}
+          <section
+            className="relative overflow-hidden rounded-2xl px-8 py-7 text-white shadow-md"
+            style={{ background: "var(--grad-customers)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/ctera-curve.svg"
+              alt=""
+              aria-hidden
+              className="pointer-events-none absolute right-6 top-5 w-36 opacity-15"
+            />
+            <div className="relative">
+              <div className="flex items-center gap-1.5 text-[13px] font-medium text-white/75">
+                <Download className="h-3.5 w-3.5" /> Downloads Center
+              </div>
+              <h2 className="mt-2 text-[27px] font-bold tracking-tight text-white">Manage files available to tenants</h2>
+              <p className="mt-1.5 max-w-xl text-sm text-white/85">
+                Add, publish and organize the software catalog tenants can download.
+              </p>
+            </div>
+          </section>
+
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-4">
             <StatCard label="Total files" value={files.length} />
-            <StatCard label="Published" value={visibleCount} accent="text-emerald-600" />
+            <StatCard label="Published" value={visibleCount} accent="text-success" />
             <StatCard label="Total downloads" value={totalDownloads.toLocaleString()} />
           </div>
 
@@ -250,7 +273,7 @@ export default function AdminDownloadsPage() {
                         className={cn(
                           "rounded px-2.5 py-1 text-[12px] font-medium transition-colors",
                           selectedCategory === cat
-                            ? "bg-foreground text-background"
+                            ? "bg-primary text-primary-foreground"
                             : "text-muted-foreground hover:text-foreground",
                         )}
                       >
@@ -429,8 +452,8 @@ export default function AdminDownloadsPage() {
                         >
                           <Td>
                             <div className="flex items-center gap-2.5">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
-                                <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+                                <FileText className="h-3.5 w-3.5" />
                               </div>
                               {isEditing ? (
                                 <input
@@ -444,7 +467,7 @@ export default function AdminDownloadsPage() {
                             </div>
                           </Td>
                           <Td>
-                            <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                            <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                               {file.category}
                             </span>
                           </Td>
@@ -494,11 +517,11 @@ export default function AdminDownloadsPage() {
                               className={cn(
                                 "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors",
                                 file.visible
-                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                  : "border-border bg-muted text-muted-foreground hover:bg-accent",
+                                  ? "border-success/30 bg-success/10 text-success hover:bg-success/20"
+                                  : "border-warning/30 bg-warning/10 text-warning hover:bg-warning/20",
                               )}
                             >
-                              <span className={cn("h-1.5 w-1.5 rounded-full", file.visible ? "bg-emerald-500" : "bg-muted-foreground/50")} />
+                              <span className={cn("h-1.5 w-1.5 rounded-full", file.visible ? "bg-success" : "bg-warning")} />
                               {file.visible ? "Published" : "Hidden"}
                             </button>
                           </Td>
@@ -508,7 +531,7 @@ export default function AdminDownloadsPage() {
                                 <>
                                   <button
                                     onClick={() => saveEdit(file.id)}
-                                    className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors"
+                                    className="rounded-md p-1.5 text-success hover:bg-success/10 transition-colors"
                                   >
                                     <Check className="h-3.5 w-3.5" />
                                   </button>
@@ -529,7 +552,7 @@ export default function AdminDownloadsPage() {
                                   </button>
                                   <button
                                     onClick={() => deleteFile(file.id)}
-                                    className="rounded-md p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors"
+                                    className="rounded-md p-1.5 text-muted-foreground hover:bg-critical/10 hover:text-critical transition-colors"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
                                   </button>
@@ -562,8 +585,8 @@ function StatCard({ label, value, accent = "text-foreground" }: { label: string;
   return (
     <Card>
       <CardContent className="p-5">
-        <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
-        <div className={cn("mt-2 text-3xl font-semibold tracking-tight tabular-nums", accent)}>{value}</div>
+        <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+        <div className={cn("mt-2 font-display text-3xl font-bold tracking-tight tabular-nums", accent)}>{value}</div>
       </CardContent>
     </Card>
   )

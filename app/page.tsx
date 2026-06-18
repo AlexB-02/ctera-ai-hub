@@ -15,6 +15,8 @@ import {
   Clock,
   AlertTriangle,
   CheckSquare,
+  Sparkles,
+  Download,
 } from "lucide-react"
 import { useEffect, useState, useMemo } from "react"
 import Link from "next/link"
@@ -24,13 +26,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { useHub } from "@/components/hub-provider"
 import { useTenant } from "@/components/tenant-context"
-import { effectiveDashboard, effectiveFeatureAdoption, tenantUsesFeaturesOnlyViews } from "@/lib/tenant-hub-views"
-import { getDashboardNewsIcon, getDashboardVersionIcon } from "@/lib/lucide-icon-map"
+import { effectiveDashboard, effectiveFeatureAdoption, deploymentUsesFeaturesOnlyViews } from "@/lib/tenant-hub-views"
+import { getDashboardNewsIcon, getDashboardVersionIcon, getDeviceIcon } from "@/lib/lucide-icon-map"
 import { seedHubData } from "@/lib/seed-hub"
 
 export default function DashboardPage() {
   const { hub } = useHub()
-  const { scope } = useTenant()
+  const { scope, customers } = useTenant()
   const dashboard = effectiveDashboard(hub, scope)
   const { newsItems, latestVersions, latestNewsItems, myCteraSpaceLastUpdated } = dashboard
   const latestNewsForDisplay = useMemo(() => {
@@ -40,10 +42,41 @@ export default function DashboardPage() {
     return seedHubData.dashboard.latestNewsItems
   }, [latestNewsItems, hub.dashboard.latestNewsItems])
 
-  const isFeaturesOnlyTenant = scope.type === "tenant" && tenantUsesFeaturesOnlyViews(scope.tenant)
+  const isFeaturesOnlyDeployment = deploymentUsesFeaturesOnlyViews(hub, scope)
 
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0)
   const [currentLatestNewsIndex, setCurrentLatestNewsIndex] = useState(0)
+  const [myCteraIndex, setMyCteraIndex] = useState(0)
+
+  // Devices sorted alphabetically for the Device Fleet KPI card
+  const fleetDevices = [...(hub.devices?.devices ?? [])].sort((a, b) => a.name.localeCompare(b.name))
+
+  const firstName = hub.currentUser.name.split(" ")[0]
+  const [greeting, setGreeting] = useState("Good day")
+  useEffect(() => {
+    const h = new Date().getHours()
+    setGreeting(h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening")
+  }, [])
+
+  // Feature adoption: real — active tenant, or fleet average in Global view.
+  const statAdoption =
+    scope.type === "deployment"
+      ? scope.customer.featureAdoption ?? 0
+      : Math.round(
+          customers.reduce((a, c) => a + (c.featureAdoption ?? 0), 0) / Math.max(customers.length, 1),
+        )
+  const devicesUpToDate = fleetDevices.filter((d) => d.status === "up-to-date").length
+  const recGradients = [
+    "linear-gradient(135deg,#505be5,#2526a9)",
+    "linear-gradient(135deg,#54bff5,#2563eb)",
+    "linear-gradient(135deg,#46bea5,#2a9d8f)",
+  ]
+  const newsGradients = [
+    "var(--grad-primary)",
+    "var(--grad-teal)",
+    "var(--grad-partners)",
+    "var(--grad-customers)",
+  ]
   const [isPollOpen, setIsPollOpen] = useState(false)
   const [pollAnswers, setPollAnswers] = useState({
     satisfaction: "",
@@ -101,7 +134,7 @@ export default function DashboardPage() {
   const tenantAdoption = effectiveFeatureAdoption(hub, scope)
   const tenantAdoptionEnabled = tenantAdoption.prdData.filter((f) => f.enabled).length
   const showPortalFeatureSummary =
-    isFeaturesOnlyTenant && tenantAdoption.prdData.length > 0
+    isFeaturesOnlyDeployment && tenantAdoption.prdData.length > 0
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -114,25 +147,45 @@ export default function DashboardPage() {
         />
 
         <div className="p-8">
-          {showPortalFeatureSummary && scope.type === "tenant" && (
-            <Card className="mb-6 border-primary/25 bg-muted/40">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">{scope.tenant.name}</CardTitle>
-                <CardDescription>
-                  Feature inventory for {scope.tenant.domain}: {tenantAdoptionEnabled} of {tenantAdoption.prdData.length}{" "}
-                  features enabled (portal adoption {scope.tenant.featureAdoption}%).
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                <Button asChild variant="secondary" size="sm">
-                  <Link href="/feature-adoption">Open Feature Adoption</Link>
+          {/* Branded welcome hero */}
+          <section
+            className="relative mb-6 overflow-hidden rounded-2xl px-8 py-8 text-white shadow-md"
+            style={{ background: "linear-gradient(120deg,#505be5 0%,#102341 100%)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/ctera-curve.svg"
+              alt=""
+              aria-hidden
+              className="pointer-events-none absolute right-6 top-5 w-36 opacity-15"
+            />
+            <div className="relative">
+              <div className="text-[13px] font-medium text-white/75">Welcome back</div>
+              <h2 className="mt-2 mb-1.5 text-[27px] font-bold tracking-tight text-white">
+                {greeting}, {firstName}
+              </h2>
+              <p className="max-w-lg text-sm text-white/85">
+                Your all-in-one hub for CTERA updates, downloads and resources. Here&apos;s what needs your attention
+                today.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2.5">
+                <Button asChild className="bg-white text-[#102341] hover:bg-white/90">
+                  <Link href="/insights">
+                    <Sparkles className="mr-1.5 h-4 w-4" /> View AI recommendations
+                  </Link>
                 </Button>
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/portal">Open Deployment</Link>
+                <Button
+                  asChild
+                  variant="secondary"
+                  className="border border-white/20 bg-white/15 text-white hover:bg-white/25"
+                >
+                  <Link href="/downloads">
+                    <Download className="mr-1.5 h-4 w-4" /> Downloads
+                  </Link>
                 </Button>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            </div>
+          </section>
 
           <Card className="mb-6">
             <CardHeader>
@@ -150,29 +203,42 @@ export default function DashboardPage() {
                       {[0, 1, 2].map((offset) => {
                         const index = (currentNewsIndex + offset) % newsItems.length
                         const article = newsItems[index]
+                        const RecIcon = getDashboardNewsIcon(
+                          "icon" in article ? (article as { icon?: string }).icon : undefined,
+                        )
                         return (
-                          <Card key={index} className="overflow-hidden">
-                            <div className="relative h-48 overflow-hidden bg-gradient-to-br from-muted to-muted/50">
-                              <img
-                                src={article.image || "/placeholder.svg"}
-                                alt={article.title}
-                                className="h-full w-full object-cover"
-                              />
+                          <Card key={index} className="flex flex-col overflow-hidden">
+                            <div
+                              className="relative flex h-28 items-center justify-center overflow-hidden text-white"
+                              style={{ background: recGradients[index % recGradients.length] }}
+                            >
+                              <RecIcon className="h-12 w-12 opacity-95" />
+                              <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-[#102341] shadow-sm">
+                                {article.category}
+                              </span>
                             </div>
-                            <CardHeader>
-                              <div className="text-xs font-medium text-primary">{article.category}</div>
-                              <CardTitle className="text-sm">{article.title}</CardTitle>
-                              <CardDescription className="line-clamp-2 text-xs">{article.description}</CardDescription>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-[15px] font-bold">{article.title}</CardTitle>
+                              <CardDescription className="line-clamp-2 text-[13px]">
+                                {article.description}
+                              </CardDescription>
                             </CardHeader>
-                            <CardContent>
-                              <Button variant="link" className="h-auto p-0 text-xs">
+                            <CardContent className="flex flex-1 flex-col">
+                              <Button variant="link" className="h-auto justify-start p-0 text-xs">
                                 Learn more →
                               </Button>
-                              <div className="mt-4 border-t pt-4">
-                                <p className="text-xs font-bold text-muted-foreground">
+                              <div
+                                className="mt-3 rounded-lg p-3"
+                                style={{
+                                  background: "color-mix(in srgb, var(--primary) 7%, transparent)",
+                                  border: "1px solid color-mix(in srgb, var(--primary) 18%, transparent)",
+                                }}
+                              >
+                                <p className="flex items-center gap-1.5 font-display text-[11px] font-bold text-primary">
+                                  <Sparkles className="h-3.5 w-3.5" />
                                   Why am I getting this recommendation?
                                 </p>
-                                <p className="mt-1 text-xs text-muted-foreground">{article.reason}</p>
+                                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{article.reason}</p>
                               </div>
                             </CardContent>
                           </Card>
@@ -181,23 +247,37 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-center gap-4">
-                    <Button variant="outline" size="icon" onClick={handlePrevNews} className="h-8 w-8 bg-transparent">
+                  <div className="mt-5 flex items-center justify-center gap-4">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handlePrevNews}
+                      className="h-9 w-9 rounded-full border-border shadow-sm"
+                      aria-label="Previous recommendations"
+                    >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-1.5">
                       {newsItems.map((_, index) => (
                         <button
                           key={index}
                           onClick={() => setCurrentNewsIndex(index)}
-                          className={`h-2 w-2 rounded-full transition-colors ${
-                            index === currentNewsIndex ? "bg-primary" : "bg-muted-foreground/30"
+                          className={`h-2 rounded-full transition-all ${
+                            index === currentNewsIndex
+                              ? "w-5 bg-primary"
+                              : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
                           }`}
                           aria-label={`Go to slide ${index + 1}`}
                         />
                       ))}
                     </div>
-                    <Button variant="outline" size="icon" onClick={handleNextNews} className="h-8 w-8 bg-transparent">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleNextNews}
+                      className="h-9 w-9 rounded-full border-border shadow-sm"
+                      aria-label="Next recommendations"
+                    >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
@@ -205,6 +285,27 @@ export default function DashboardPage() {
               )}
             </CardContent>
           </Card>
+
+          {showPortalFeatureSummary && scope.type === "deployment" && (
+            <Card className="mb-6 border-primary/25 bg-muted/40">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{scope.customer.name}</CardTitle>
+                <CardDescription>
+                  Feature inventory for {scope.deployment.dnsSuffix}: {tenantAdoptionEnabled} of {tenantAdoption.prdData.length}{" "}
+                  features enabled (portal adoption {scope.customer.featureAdoption ?? 0}%).
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                <Button asChild variant="secondary" size="sm">
+                  <Link href="/feature-adoption">Open Feature Adoption</Link>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/portal">Open Deployment</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
 
           <Card className="mb-6">
             <CardHeader>
@@ -214,63 +315,155 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className={`grid gap-6 ${isFeaturesOnlyTenant ? "" : "lg:grid-cols-3"}`}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Installed Versions Overview</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {latestVersions.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No installed version data for this tenant.
-                      </p>
-                    ) : (
-                      <div className="space-y-4">
-                        {latestVersions.map((item) => {
-                          const VersionIcon = getDashboardVersionIcon(
-                            "icon" in item ? (item as { icon?: string }).icon : undefined,
-                          )
-                          return (
-                            <div key={item.name} className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                                  <VersionIcon className="h-5 w-5 text-muted-foreground" />
+              {(() => {
+                const cards = [
+                  <Card key="versions" className="h-full">
+                    <CardHeader>
+                      <CardTitle className="text-[15px] font-bold text-foreground">Installed Versions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {latestVersions.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No installed version data for this tenant.</p>
+                      ) : (
+                        <div className="divide-y divide-border">
+                          {latestVersions.map((item, i) => {
+                            const VersionIcon = getDashboardVersionIcon(
+                              "icon" in item ? (item as { icon?: string }).icon : undefined,
+                            )
+                            return (
+                              <div
+                                key={`${item.name}-${i}`}
+                                className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                    <VersionIcon className="h-5 w-5" />
+                                  </div>
+                                  <div>
+                                    <div className="text-[13.5px] font-semibold text-foreground">{item.name}</div>
+                                    <div className="text-xs text-muted-foreground">v{item.version}</div>
+                                  </div>
                                 </div>
-                                <div>
-                                  <div className="text-sm font-medium">{item.name}</div>
-                                  <div className="text-xs text-muted-foreground">v{item.version}</div>
-                                </div>
+                                <StatusBadge status={item.status} />
                               </div>
-                              <StatusBadge status={item.status} />
-                            </div>
-                          )
-                        })}
+                            )
+                          })}
+                        </div>
+                      )}
+                      <Button variant="link" className="mt-4 h-auto p-0 text-sm">
+                        View all download
+                        <ArrowRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </CardContent>
+                  </Card>,
+                  <Card key="fleet" className="h-full">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-[15px] font-bold text-foreground">Device Fleet</CardTitle>
+                        <span className="text-xs text-muted-foreground">{fleetDevices.length} devices</span>
                       </div>
-                    )}
-                    <Button variant="link" className="mt-4 h-auto p-0 text-sm">
-                      View all download
-                      <ArrowRight className="ml-1 h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {!isFeaturesOnlyTenant && (
-                  <>
-                    <Card className="border-orange-200 bg-orange-50/50">
+                    </CardHeader>
+                    <CardContent>
+                      {fleetDevices.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No device data for this tenant.</p>
+                      ) : (
+                        <>
+                          <div className="divide-y divide-border">
+                            {fleetDevices.slice(0, 3).map((d, i) => {
+                              const Icon = getDeviceIcon("icon" in d ? (d as { icon?: string }).icon : undefined)
+                              return (
+                                <div
+                                  key={`${d.name}-${i}`}
+                                  className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+                                >
+                                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                    <Icon className="h-4 w-4" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="truncate text-[13.5px] font-semibold text-foreground">{d.name}</div>
+                                    <div className="truncate text-xs text-muted-foreground">{d.type}</div>
+                                  </div>
+                                  <StatusBadge status={d.status} />
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <div className="mt-3 text-[11px] font-semibold" style={{ color: "var(--success)" }}>
+                            {devicesUpToDate} of {fleetDevices.length} up to date
+                          </div>
+                          <Button asChild variant="link" className="mt-2 h-auto p-0 text-sm">
+                            <Link href="/portal">
+                              {fleetDevices.length > 3 ? `View all ${fleetDevices.length} in Deployment` : "View in Deployment"}
+                              <ArrowRight className="ml-1 h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>,
+                  <Card key="adoption" className="h-full">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-[15px] font-bold text-foreground">Feature Adoption Rate</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col items-center gap-3 py-1">
+                        <div
+                          className="grid h-28 w-28 place-items-center rounded-full"
+                          style={{ background: `conic-gradient(var(--primary) ${statAdoption}%, var(--muted) 0)` }}
+                        >
+                          <div className="grid h-[88px] w-[88px] place-items-center rounded-full bg-card">
+                            <span className="font-display text-2xl font-bold text-primary">{statAdoption}%</span>
+                          </div>
+                        </div>
+                        {tenantAdoption.prdData.length > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            {tenantAdoptionEnabled} of {tenantAdoption.prdData.length} features enabled
+                          </div>
+                        )}
+                      </div>
+                      <p className="mt-2 text-center text-xs text-muted-foreground">
+                        Capabilities enabled for {scope.type === "deployment" ? scope.customer.name : "your fleet"}.
+                      </p>
+                      <Button asChild variant="link" className="mt-2 h-auto p-0 text-sm">
+                        <Link href="/feature-adoption">
+                          View Feature Adoption
+                          <ArrowRight className="ml-1 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>,
+                ]
+                if (!isFeaturesOnlyDeployment) {
+                  cards.push(
+                    <Card
+                      key="license"
+                      className="h-full shadow-none"
+                      style={{
+                        background: "color-mix(in srgb, var(--warning) 8%, transparent)",
+                        borderColor: "color-mix(in srgb, var(--warning) 35%, transparent)",
+                      }}
+                    >
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base text-orange-900">
-                          <Clock className="h-5 w-5 text-orange-600" />
+                        <CardTitle className="flex items-center gap-2 font-display text-sm font-bold" style={{ color: "var(--warning)" }}>
+                          <Clock className="h-5 w-5" />
                           License Information
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-foreground">Status</span>
-                          <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Active</Badge>
+                          <Badge
+                            className="border-transparent"
+                            style={{ background: "color-mix(in srgb, var(--warning) 15%, transparent)", color: "var(--warning)" }}
+                          >
+                            Active
+                          </Badge>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-foreground">Expires In</span>
-                          <span className="text-sm font-bold text-orange-600">45 days</span>
+                          <span className="text-sm font-bold" style={{ color: "var(--warning)" }}>
+                            45 days
+                          </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-foreground">Expiration Date</span>
@@ -280,12 +473,18 @@ export default function DashboardPage() {
                           Contact your account manager to renew your license and avoid service disruptions.
                         </p>
                       </CardContent>
-                    </Card>
-
-                    <Card className="border-red-200 bg-red-50/50">
+                    </Card>,
+                    <Card
+                      key="storage"
+                      className="h-full shadow-none"
+                      style={{
+                        background: "color-mix(in srgb, var(--critical) 8%, transparent)",
+                        borderColor: "color-mix(in srgb, var(--critical) 35%, transparent)",
+                      }}
+                    >
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base text-red-900">
-                          <Database className="h-5 w-5 text-red-600" />
+                        <CardTitle className="flex items-center gap-2 font-display text-sm font-bold" style={{ color: "var(--critical)" }}>
+                          <Database className="h-5 w-5" />
                           Storage Overview
                         </CardTitle>
                       </CardHeader>
@@ -295,21 +494,71 @@ export default function DashboardPage() {
                             <span className="text-sm font-medium text-foreground">Usage</span>
                             <span className="text-base font-bold text-foreground">92 TB / 100 TB</span>
                           </div>
-                          <div className="h-3 w-full rounded-full bg-red-100">
-                            <div className="h-3 rounded-full bg-red-500" style={{ width: "92%" }}></div>
+                          <div
+                            className="h-3 w-full overflow-hidden rounded-full"
+                            style={{ background: "color-mix(in srgb, var(--critical) 18%, transparent)" }}
+                          >
+                            <div className="h-3 rounded-full" style={{ width: "92%", background: "var(--critical)" }}></div>
+                          </div>
+                          <div className="text-[11px] font-semibold" style={{ color: "var(--critical)" }}>
+                            +4 TB this week
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+                          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: "var(--critical)" }} />
                           <p className="text-xs text-muted-foreground">
                             Storage is near capacity. Expand now to prevent automatic quota enforcement.
                           </p>
                         </div>
                       </CardContent>
-                    </Card>
-                  </>
-                )}
-              </div>
+                    </Card>,
+                  )
+                }
+
+                const visible = 3
+                const count = cards.length
+                return (
+                  <div className="relative">
+                    <div className="grid items-stretch gap-6 lg:grid-cols-3">
+                      {Array.from({ length: Math.min(visible, count) }).map((_, o) => cards[(myCteraIndex + o) % count])}
+                    </div>
+                    {count > visible && (
+                      <div className="mt-5 flex items-center justify-center gap-4">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9 rounded-full border-border shadow-sm"
+                          aria-label="Previous cards"
+                          onClick={() => setMyCteraIndex((i) => (i - 1 + count) % count)}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <div className="flex items-center gap-1.5">
+                          {cards.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setMyCteraIndex(i)}
+                              aria-label={`Go to card ${i + 1}`}
+                              className={`h-2 rounded-full transition-all ${
+                                i === myCteraIndex ? "w-5 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9 rounded-full border-border shadow-sm"
+                          aria-label="Next cards"
+                          onClick={() => setMyCteraIndex((i) => (i + 1) % count)}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
             </CardContent>
           </Card>
 
@@ -332,7 +581,11 @@ export default function DashboardPage() {
                         )
 
                         return (
-                          <Card key={index} className={`flex flex-col bg-gradient-to-br ${item.gradient} text-white`}>
+                          <Card
+                            key={index}
+                            className="flex flex-col border-0 text-white shadow-md"
+                            style={{ background: newsGradients[index % newsGradients.length] }}
+                          >
                             <CardHeader className="pb-4">
                               <div className="flex items-center gap-2">
                                 <Icon className="h-5 w-5" />
@@ -362,22 +615,25 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-center gap-4">
+                  <div className="mt-5 flex items-center justify-center gap-4">
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={handlePrevLatestNews}
-                      className="h-8 w-8 bg-transparent"
+                      className="h-9 w-9 rounded-full border-border shadow-sm"
+                      aria-label="Previous news"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-1.5">
                       {latestNewsForDisplay.map((_, index) => (
                         <button
                           key={index}
                           onClick={() => setCurrentLatestNewsIndex(index)}
-                          className={`h-2 w-2 rounded-full transition-colors ${
-                            index === currentLatestNewsIndex ? "bg-primary" : "bg-muted-foreground/30"
+                          className={`h-2 rounded-full transition-all ${
+                            index === currentLatestNewsIndex
+                              ? "w-5 bg-primary"
+                              : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
                           }`}
                           aria-label={`Go to slide ${index + 1}`}
                         />
@@ -387,7 +643,8 @@ export default function DashboardPage() {
                       variant="outline"
                       size="icon"
                       onClick={handleNextLatestNews}
-                      className="h-8 w-8 bg-transparent"
+                      className="h-9 w-9 rounded-full border-border shadow-sm"
+                      aria-label="Next news"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
@@ -403,7 +660,7 @@ export default function DashboardPage() {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-purple-600" />
+              <CheckSquare className="h-5 w-5 text-primary" />
               Your Opinion Matters
             </DialogTitle>
             <DialogDescription>
@@ -547,7 +804,7 @@ export default function DashboardPage() {
             <Button variant="outline" onClick={() => setIsPollOpen(false)} className="flex-1">
               Skip
             </Button>
-            <Button onClick={handlePollSubmit} className="flex-1 bg-purple-600 hover:bg-purple-700">
+            <Button onClick={handlePollSubmit} className="flex-1">
               Submit Feedback
             </Button>
           </div>
